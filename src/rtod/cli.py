@@ -31,7 +31,29 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--eval", choices=["val200", "val"], help="also compute mAP and merge it")
     b.add_argument("--out", type=Path, default=Path("results"))
     b.add_argument("--json", action="store_true")
+    t = sub.add_parser("qat", help="QAT fine-tune, export folded float, PTQ it (the pod job)")
+    t.add_argument("--steps", type=int, default=1250)
+    t.add_argument("--batch", type=int, default=16)
+    t.add_argument("--device", default="cpu")
+    t.add_argument("--subset", choices=["train10k", "val200"], default="train10k")
+    t.add_argument("--workers", type=int, default=4)
+    t.add_argument("--out", type=Path, default=Path("qat_out"))
     args = p.parse_args(argv)
+
+    if args.cmd == "qat":
+        from rtod.quant import quantize_ptq
+        from rtod.train import export_folded, qat_finetune
+
+        split = "train" if args.subset == "train10k" else "val"
+        ids = coco.read_ids(args.subset)
+        args.out.mkdir(parents=True, exist_ok=True)
+        model = qat_finetune(
+            ids, split, steps=args.steps, batch=args.batch, device=args.device, workers=args.workers
+        )
+        folded = export_folded(model, args.out / "yolox_tiny_qat_folded.onnx")
+        calib_imgs = coco.fetch_images(ids[:5000], split)
+        print(quantize_ptq(folded, args.out / "yolox_tiny_qat_int8.onnx", calib_imgs))
+        return 0
 
     if args.cmd == "bench":
         try:

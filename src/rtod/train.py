@@ -1,0 +1,131 @@
+"""QAT fine-tuning of YOLOX-Tiny on a COCO subset (ADR-0003, ADR-0006).
+
+Short recipe: official weights, BN folded, fake-quant on every conv, SGD with cosine decay, random
+horizontal flip only (no mosaic: this is recovery, not training from scratch). The deployable model
+is the folded float weights run through the PTQ pipeline (docs/spikes/qat-export.md, path B).
+"""
+
+from __future__ import annotations
+
+import json
+import math
+from collections.abc import Sequence
+from pathlib import Path
+from typing import Any
+
+import cv2
+import numpy as np
+import torch
+from torch.utils.data import DataLoader, Dataset
+
+from rtod import coco
+from rtod.detect import F32, Image, letterbox
+from rtod.qat import calibrate, prepare_qat, set_fake_quant
+
+MAX_LABELS = 120
+
+
+def load_boxes(ids: Sequence[int], split: str) -> dict[int, F32]:
+    """image id -> (n, 5) array of [class_index, x, y, w, h] in image pixels; crowds skipped."""
+    ann = json.loads(coco.annotation_file(split).read_text())
+    cat_index = {c: i for i, c in enumerate(sorted(c["id"] for c in ann["categories"]))}
+    wanted = set(ids)
+    out: dict[int, list[list[float]]] = {i: [] for i in ids}
+    for a in ann["annotations"]:
+        if a["image_id"] in wanted and not a["iscrowd"] and a["bbox"][2] > 1 and a["bbox"][3] > 1:
+            out[a["image_id"]].append([cat_index[a["category_id"]], *a["bbox"]])
+    return {i: np.asarray(v, dtype=np.float32).reshape(-1, 5) for i, v in out.items()}
+
+
+def prepare_sample(img: Image, boxes: F32, flip: bool) -> tuple[F32, F32]:
+    """Letterbox + YOLOX targets: (MAX_LABELS, 5) rows of [cls, cx, cy, w, h] in input pixels."""
+    boxes = boxes.copy()
+    if flip:
+        img = np.ascontiguousarray(img[:, ::-1])
+        boxes[:, 1] = img.shape[1] - boxes[:, 1] - boxes[:, 3]
+    blob, ratio = letterbox(img)
+    t = np.zeros((MAX_LABELS, 5), dtype=np.float32)
+    n = min(len(boxes), MAX_LABELS)
+    t[:n, 0] = boxes[:n, 0]
+    t[:n, 1:3] = (boxes[:n, 1:3] + boxes[:n, 3:5] / 2) * ratio
+    t[:n, 3:5] = boxes[:n, 3:5] * ratio
+    return blob[0], t
+
+
+class CocoSubset(Dataset[tuple[F32, F32]]):
+    def __init__(self, ids: Sequence[int], split: str, train: bool = True) -> None:
+        self.ids, self.train = list(ids), train
+        self.paths = coco.fetch_images(self.ids, split)
+        self.boxes = load_boxes(self.ids, split)
+
+    def __len__(self) -> int:
+        return len(self.ids)
+
+    def __getitem__(self, i: int) -> tuple[F32, F32]:
+        img = cv2.imread(str(self.paths[i]))
+        flip = self.train and bool(np.random.random() < 0.5)
+        return prepare_sample(np.asarray(img, dtype=np.uint8), self.boxes[self.ids[i]], flip)
+
+
+def qat_finetune(
+    ids: Sequence[int],
+    split: str = "train",
+    *,
+    steps: int,
+    batch: int = 16,
+    lr: float = 2e-4,
+    calib_batches: int = 8,
+    device: str = "cpu",
+    workers: int = 4,
+) -> torch.nn.Module:
+    """Returns the QAT model (fake-quant on) after `steps` optimizer steps."""
+    from rtod.models import load_official_weights
+
+    model = prepare_qat(load_official_weights())
+    ds = CocoSubset(ids, split)
+    loader = DataLoader(ds, batch_size=batch, shuffle=True, num_workers=workers, drop_last=True)
+
+    model.head.decode_in_inference = False
+    model.to(device)
+    calibrate(model, (x.to(device) for x, _ in _take(loader, calib_batches)))
+    for m in (
+        model.modules()
+    ):  # weights keep changing, so their ranges keep tracking; activations stay frozen
+        if hasattr(m, "w_fq"):
+            m.w_fq.enable_observer()
+
+    model.train()
+    opt = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    step = 0
+    while step < steps:
+        for x, y in loader:
+            for g in opt.param_groups:
+                g["lr"] = lr * 0.5 * (1 + math.cos(math.pi * step / steps))
+            out: dict[str, Any] = model(x.to(device), y.to(device))
+            opt.zero_grad()
+            out["total_loss"].backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
+            opt.step()
+            step += 1
+            if step in (1, steps) or step % 20 == 0:
+                print(f"step {step}/{steps} loss {out['total_loss'].item():.3f}", flush=True)
+            if step >= steps:
+                break
+    return model.eval().cpu()
+
+
+def _take(loader: DataLoader[tuple[F32, F32]], n: int) -> list[tuple[torch.Tensor, torch.Tensor]]:
+    out = []
+    for i, batch in enumerate(loader):
+        if i >= n:
+            break
+        out.append(batch)
+    return out
+
+
+def export_folded(model: torch.nn.Module, out: Path) -> Path:
+    """Export the fine-tuned, BN-folded float weights (fake-quant off) as ONNX."""
+    from rtod.models import export_onnx
+
+    set_fake_quant(model, False)
+    return export_onnx(model, out)  # type: ignore[arg-type]

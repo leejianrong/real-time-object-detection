@@ -68,5 +68,5 @@ explicit = true
 # torch.nn module surgery (setattr on children, ModuleList item assignment) is not expressible in
 # torch's stubs; the integration tests cover this module instead.
 [[tool.mypy.overrides]]
-module = ["rtod.qat"]
+module = ["rtod.qat", "rtod.train"]
 ignore_errors = true
