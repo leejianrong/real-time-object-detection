@@ -5,9 +5,10 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from dataclasses import asdict
 from pathlib import Path
 
-from rtod import coco
+from rtod import bench, coco
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -21,7 +22,33 @@ def main(argv: list[str] | None = None) -> int:
     q.add_argument("fp32", type=Path)
     q.add_argument("out", type=Path)
     q.add_argument("--calib", type=int, default=5000, help="calibration images from train10k")
+    b = sub.add_parser("bench", help="CPU latency benchmark, writes results JSON")
+    b.add_argument("model", type=Path)
+    b.add_argument("--variant", required=True, help="e.g. yolox-tiny/fp32")
+    b.add_argument("--threads", type=int, default=1)
+    b.add_argument("--iters", type=int, default=bench.MIN_ITERS)
+    b.add_argument("--quick", action="store_true", help="allow <200 iterations; labelled in output")
+    b.add_argument("--eval", choices=["val200", "val"], help="also compute mAP and merge it")
+    b.add_argument("--out", type=Path, default=Path("results"))
+    b.add_argument("--json", action="store_true")
     args = p.parse_args(argv)
+
+    if args.cmd == "bench":
+        try:
+            r = bench.bench(
+                args.model, args.variant, threads=args.threads, iters=args.iters, quick=args.quick
+            )
+        except ValueError as e:
+            print(f"error: {e}", file=sys.stderr)
+            return 2
+        if args.eval:
+            m = coco.evaluate(
+                args.model, coco.read_ids("val200") if args.eval == "val200" else None
+            )
+            r.map50_95, r.map50 = m["map50_95"], m["map50"]
+        path = bench.write_result(r, args.out)
+        print(json.dumps(asdict(r)) if args.json else path)
+        return 0
 
     if args.cmd == "quantize":
         from rtod.quant import quantize_ptq
