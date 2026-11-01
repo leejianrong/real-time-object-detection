@@ -1,0 +1,10 @@
+Real-time object detection (rtod)
+Copyright 2026 Jian Lee
+
+This product includes software and model weights developed by third parties:
+
+- YOLOX (https://github.com/Megvii-BaseDetection/YOLOX)
+  Copyright (c) Megvii Inc. Licensed under the Apache License, Version 2.0.
+  YOLOX-Tiny architecture and COCO-pretrained weights are the starting point of this project.
+
+Further attributions (demo video clip, other dependencies) are added here as they are shipped.

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Mirrors the cheap CI jobs. Bypass with: git push --no-verify
+set -euo pipefail
+make check
