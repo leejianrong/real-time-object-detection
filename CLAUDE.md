@@ -4,7 +4,7 @@ Quantize and prune YOLOX-Tiny, benchmark vs the original, ship a Colab showcase 
 Source of truth: `PLAN.md`, `SLICES.md`, `docs/adr/`, decisions in `QUESTIONS.md`. Trust the code over the docs if they disagree, and say so.
 
 ## Status
-Scaffold only (V1 not started). Update this section as slices land.
+V1 in progress: vendored YOLOX-Tiny + ONNX export (`rtod.models`). Slow tests (`-m slow`) download weights; CI skips them.
 
 ## Commands
 `make` lists targets. `make install`, `make check` (lint + mypy + unit, also the pre-push hook), `make integration`, `make hooks` (once per clone).
