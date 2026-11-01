@@ -11,7 +11,7 @@ requires-python = ">=3.11"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "Jian Lee", email = "leejianrong2@gmail.com" }]
-dependencies = ["numpy>=1.26"]
+dependencies = ["numpy>=1.26", "opencv-python-headless>=4.9"]
 
 [project.optional-dependencies]
 onnx = ["onnxruntime>=1.18", "onnx>=1.16"]
@@ -37,7 +37,7 @@ files = ["src"]
 exclude = ["src/rtod/_yolox"]
 
 [[tool.mypy.overrides]]
-module = ["torch.*", "onnx.*"]
+module = ["torch.*", "onnx.*", "onnxruntime.*", "cv2.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
