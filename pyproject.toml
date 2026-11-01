@@ -16,9 +16,13 @@ dependencies = ["numpy>=1.26", "opencv-python-headless>=4.9"]
 [project.optional-dependencies]
 onnx = ["onnxruntime>=1.18", "onnx>=1.16"]
 torch = ["torch>=2.4", "onnx>=1.16"]
+coco = ["pycocotools>=2.0.8"]
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "pip-audit>=2.7"]
+
+[project.scripts]
+rtod = "rtod.cli:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/rtod"]
@@ -37,7 +41,7 @@ files = ["src"]
 exclude = ["src/rtod/_yolox"]
 
 [[tool.mypy.overrides]]
-module = ["torch.*", "onnx.*", "onnxruntime.*", "cv2.*"]
+module = ["torch.*", "onnx.*", "onnxruntime.*", "cv2.*", "pycocotools.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
