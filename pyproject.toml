@@ -15,6 +15,7 @@ dependencies = ["numpy>=1.26"]
 
 [project.optional-dependencies]
 onnx = ["onnxruntime>=1.18", "onnx>=1.16"]
+torch = ["torch>=2.4", "onnx>=1.16"]
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "pip-audit>=2.7"]
@@ -24,6 +25,7 @@ packages = ["src/rtod"]
 
 [tool.ruff]
 line-length = 100
+extend-exclude = ["src/rtod/_yolox"]
 src = ["src", "tests"]
 
 [tool.ruff.lint]
@@ -32,6 +34,15 @@ select = ["E", "F", "I", "B", "UP"]
 [tool.mypy]
 strict = true
 files = ["src"]
+exclude = ["src/rtod/_yolox"]
+
+[[tool.mypy.overrides]]
+module = ["torch.*", "onnx.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["rtod.models"]
+disallow_untyped_calls = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -41,3 +52,11 @@ markers = [
   "slow: full-dataset accuracy runs, run manually or on RunPod",
   "gpu: needs a CUDA GPU, skipped elsewhere",
 ]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
