@@ -17,10 +17,20 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("model", type=Path)
     e.add_argument("--subset", choices=["val200", "val"], default="val")
     e.add_argument("--json", action="store_true")
+    q = sub.add_parser("quantize", help="PTQ INT8 (QDQ) from an FP32 ONNX")
+    q.add_argument("fp32", type=Path)
+    q.add_argument("out", type=Path)
+    q.add_argument("--calib", type=int, default=5000, help="calibration images from train10k")
     args = p.parse_args(argv)
 
-    ids = coco.read_ids("val200") if args.subset == "val200" else None
-    res = {"model": str(args.model), "subset": args.subset, **coco.evaluate(args.model, ids)}
+    if args.cmd == "quantize":
+        from rtod.quant import quantize_ptq
+
+        calib = coco.read_ids("train10k")[: args.calib]
+        print(quantize_ptq(args.fp32, args.out, coco.fetch_images(calib, "train")))
+        return 0
+    val_ids = coco.read_ids("val200") if args.subset == "val200" else None
+    res = {"model": str(args.model), "subset": args.subset, **coco.evaluate(args.model, val_ids)}
     print(json.dumps(res) if args.json else res)
     return 0
 
