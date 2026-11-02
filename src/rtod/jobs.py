@@ -28,7 +28,9 @@ class JobSpec:
     name: str
     image: str
     cmd: str  # what the pod runs; it must exit when done so the pod can terminate
-    gpu_types: str  # comma-separated RunPod GPU ids, any acceptable
+    # (cloud, comma-separated GPU ids), tried in order. Every GPU must fit under max_hourly_usd:
+    # RunPod may hand out any listed one and rp only checks the price after creating the pod.
+    offers: tuple[tuple[str, str], ...]
     max_hourly_usd: float
     max_hours: float  # hard lifetime ceiling baked into the pod
 
@@ -194,31 +196,51 @@ class RpProvider:
         self.rp = rp
 
     @staticmethod
-    def env(spec: JobSpec) -> dict[str, str]:
+    def env(spec: JobSpec, offer: int = 0) -> dict[str, str]:
+        cloud, gpus = spec.offers[offer]
         return {
             **os.environ,
             "RP_POD_NAME": f"rtod-{spec.name}",
             "RP_POD_IMAGE": spec.image,
             "RP_JOB_CMD": spec.cmd,
             "RP_COMPUTE_TYPE": "GPU",
-            "RP_CLOUD_TYPE": "COMMUNITY",
+            "RP_CLOUD_TYPE": cloud,
             "RP_INTERRUPTIBLE": "false",  # spot pods are no longer offered (runpod-jobs skill)
             "RP_CONTAINER_DISK_GB": "40",
             "RP_MIN_RAM_GB": "16",
-            "RP_GPU_TYPE": spec.gpu_types,
+            "RP_GPU_TYPE": gpus,
             "RP_MAX_HOURLY_USD": str(spec.max_hourly_usd),
             "RP_MAX_LIFETIME_SECS": str(int(spec.max_hours * 3600)),
         }
 
-    def _rp(self, *args: str, spec: JobSpec | None = None) -> str:
-        env = self.env(spec) if spec else None
-        done = subprocess.run([self.rp, *args], check=True, env=env, capture_output=True, text=True)
+    def _rp(self, *args: str, spec: JobSpec | None = None, offer: int = 0) -> str:
+        env = self.env(spec, offer) if spec else None
+        done = subprocess.run([self.rp, *args], env=env, capture_output=True, text=True)
+        if done.returncode:  # rp explains itself on stderr (stock, price cap, rejected field)
+            raise JobFailed(
+                f"rp {args[0]} failed ({done.returncode}): {done.stderr.strip()[-600:]}"
+            )
         return done.stdout.strip()
 
-    def up(self, spec: JobSpec) -> None:
-        self._spec = spec
-        self.pod_id = self._rp("up", spec=spec).splitlines()[-1]
-        print(f"[job] pod {self.pod_id} created", flush=True)
+    def up(self, spec: JobSpec, wait_stock_secs: float = 600, retry_every: float = 60) -> None:
+        """Create the pod, trying each offer, and waiting out 'no instances available'."""
+        self._spec, self._offer = spec, 0
+        deadline = time.monotonic() + wait_stock_secs
+        while True:
+            for i, (cloud, gpus) in enumerate(spec.offers):
+                self._offer = i
+                try:
+                    self.pod_id = self._rp("up", spec=spec, offer=i).splitlines()[-1]
+                except JobFailed as e:
+                    if "no instances currently available" not in str(e):
+                        raise
+                    print(f"[job:warn] no stock: {cloud} {gpus}", flush=True)
+                    continue
+                print(f"[job] pod {self.pod_id} created ({cloud}: {gpus})", flush=True)
+                return
+            if time.monotonic() > deadline:
+                raise JobFailed("no GPU offer had stock within the wait window")
+            time.sleep(retry_every)
 
     def _logs(self, source: str) -> list[str]:
         done = subprocess.run(
@@ -288,7 +310,7 @@ class RpProvider:
         subprocess.run(["runpodctl", "receive", code], cwd=dest, check=True, timeout=900)
 
     def down(self) -> None:
-        subprocess.run([self.rp, "down"], check=False, env=self.env(self._spec))
+        subprocess.run([self.rp, "down"], check=False, env=self.env(self._spec, self._offer))
 
     def active(self) -> bool:
         out = subprocess.run(["runpodctl", "pod", "list"], capture_output=True, text=True)

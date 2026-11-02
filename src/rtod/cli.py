@@ -38,7 +38,10 @@ def _job_qat(args: argparse.Namespace) -> int:
         name="qat",
         image="runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
         cmd=cmd,
-        gpu_types="NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation",
+        offers=(
+            ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
+            ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),
+        ),
         max_hourly_usd=0.40,
         max_hours=1.5,
     )

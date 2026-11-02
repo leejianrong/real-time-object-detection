@@ -4,7 +4,9 @@ import pytest
 
 from rtod.jobs import CapExceeded, JobSpec, Ledger, LogMonitor, RpProvider, run_job
 
-SPEC = JobSpec("qat", "img:tag", "python train.py", "NVIDIA GeForce RTX 4090", 0.34, 2.0)
+SPEC = JobSpec(
+    "qat", "img:tag", "python train.py", (("COMMUNITY", "A"), ("SECURE", "B,C")), 0.34, 2.0
+)
 
 
 class Fake:
@@ -121,3 +123,9 @@ def test_replayed_log_lines_are_not_reported_twice():
     mon = LogMonitor(start=0)
     assert len(feed(mon, 1, "TRAIN step=10/20 loss=1")) == 1
     assert feed(mon, 2, "TRAIN step=10/20 loss=1") == []
+
+
+def test_rp_env_follows_the_selected_offer():
+    assert RpProvider.env(SPEC, 0)["RP_CLOUD_TYPE"] == "COMMUNITY"
+    env = RpProvider.env(SPEC, 1)
+    assert env["RP_CLOUD_TYPE"] == "SECURE" and env["RP_GPU_TYPE"] == "B,C"
