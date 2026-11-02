@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import time
 from collections.abc import Iterator
@@ -65,6 +66,8 @@ class Ledger:
         self.path.write_text(json.dumps([*self.entries(), entry], indent=2) + "\n")
 
 
+# RunPod words "no capacity" at least two ways: "...currently available" and "no longer any ...".
+NO_STOCK = re.compile(r"no (longer any )?instances (currently )?available", re.I)
 RAW = "https://raw.githubusercontent.com/leejianrong/real-time-object-detection"
 
 
@@ -263,7 +266,7 @@ class RpProvider:
                 try:
                     self.pod_id = self._rp("up", spec=spec, offer=i).splitlines()[-1]
                 except JobFailed as e:
-                    if "no instances currently available" not in str(e):
+                    if not NO_STOCK.search(str(e)):
                         raise
                     print(f"[job:warn] no stock: {cloud} {gpus}", flush=True)
                     continue
