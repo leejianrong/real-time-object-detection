@@ -31,13 +31,16 @@ def _job_qat(args: argparse.Namespace) -> int:
     spec = jobs.JobSpec(
         name="qat",
         image="runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
-        cmd=jobs.bootstrap_cmd(sha, args.steps, args.lr, args.clip),
+        cmd=jobs.bootstrap_cmd(
+            sha,
+            jobs.job_env(args.steps, args.lr, args.clip, jobs.SWEEP if args.sweep else None),
+        ),
         offers=(
             ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
             ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),
         ),
         max_hourly_usd=0.40,
-        max_hours=1.0,
+        max_hours=1.5 if args.sweep else 1.0,
     )
     ledger = jobs.Ledger()
     print(
@@ -94,6 +97,7 @@ def main(argv: list[str] | None = None) -> int:
     j.add_argument("--steps", type=int, default=1250)
     j.add_argument("--lr", type=float, default=2e-4)
     j.add_argument("--clip", type=float, default=10.0)
+    j.add_argument("--sweep", action="store_true", help="run every ablation config in one session")
     j.add_argument(
         "--dry-run", action="store_true", help="print the plan and cap check, launch nothing"
     )
