@@ -76,6 +76,7 @@ def qat_finetune(
     steps: int,
     batch: int = 16,
     lr: float = 2e-4,
+    clip: float = 10.0,
     calib_batches: int = 8,
     device: str = "cpu",
     workers: int = 4,
@@ -109,7 +110,7 @@ def qat_finetune(
             out: dict[str, Any] = model(x.to(device), y.to(device))
             opt.zero_grad()
             out["total_loss"].backward()
-            gnorm = torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
+            gnorm = torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
             opt.step()
             step += 1
             loss = float(out["total_loss"])

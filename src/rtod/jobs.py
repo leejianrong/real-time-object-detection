@@ -71,7 +71,9 @@ NO_STOCK = re.compile(r"no (longer any )?instances (currently )?available", re.I
 RAW = "https://raw.githubusercontent.com/leejianrong/real-time-object-detection"
 
 
-def bootstrap_cmd(sha: str, steps: int, base: str | None = None) -> str:
+def bootstrap_cmd(
+    sha: str, steps: int, lr: float = 2e-4, clip: float = 10.0, base: str | None = None
+) -> str:
     """The pod's job command: fetch the pinned script (after rp's watchdog is armed) and run it.
 
     It must stay ONE simple command. rp runs it as `( ${JOB_CMD} 2>&1 | tee LOG )`, so a bare
@@ -81,7 +83,7 @@ def bootstrap_cmd(sha: str, steps: int, base: str | None = None) -> str:
     base = base or f"{RAW}/{sha}"
     inner = (
         f"(timeout 120 curl -fsSL {base}/scripts/job_qat.sh -o /tmp/job.sh "
-        f"&& RTOD_SHA={sha} QAT_STEPS={steps} bash /tmp/job.sh) "
+        f"&& RTOD_SHA={sha} QAT_STEPS={steps} QAT_LR={lr} QAT_CLIP={clip} bash /tmp/job.sh) "
         '|| echo "RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?"'
     )
     return f"bash -c '{inner}'"

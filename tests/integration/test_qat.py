@@ -6,7 +6,13 @@ torch = pytest.importorskip("torch")
 ort = pytest.importorskip("onnxruntime")
 
 from rtod.models import INPUT_SIZE, build_yolox_tiny, export_onnx  # noqa: E402
-from rtod.qat import QConv, calibrate, prepare_qat, set_fake_quant  # noqa: E402
+from rtod.qat import (  # noqa: E402
+    QConv,
+    calibrate,
+    load_qat_checkpoint,
+    prepare_qat,
+    set_fake_quant,
+)
 
 
 @pytest.fixture(scope="module")
@@ -41,3 +47,17 @@ def test_qdq_export_matches_torch_fake_quant_in_ort(data, tmp_path):
     sess = ort.InferenceSession(str(path), providers=["CPUExecutionProvider"])
     (got,) = sess.run(None, {"images": data[0].numpy()})
     assert np.corrcoef(got[0, :, 4], expected[0, :, 4])[0, 1] > 0.99
+
+
+def test_checkpoint_round_trip_keeps_weights_and_trained_ranges(data, tmp_path):
+    torch.manual_seed(0)
+    q = prepare_qat(build_yolox_tiny())
+    q.head.decode_in_inference = True
+    calibrate(q, data)
+    with torch.no_grad():
+        expected = q(data[0])
+    torch.save(q.state_dict(), tmp_path / "qat_model.pt")
+    loaded = load_qat_checkpoint(tmp_path / "qat_model.pt")
+    loaded.head.decode_in_inference = True
+    with torch.no_grad():
+        torch.testing.assert_close(loaded(data[0]), expected)

@@ -149,6 +149,7 @@ def test_bootstrap_output_reaches_rps_log_through_its_exact_wrapper(tmp_path):
     (tmp_path / "scripts").mkdir()
     (tmp_path / "scripts/job_qat.sh").write_text("echo JOB_OUTPUT_$RTOD_SHA\n")
     cmd = bootstrap_cmd("abc123", 5, base=f"file://{tmp_path}")
+    assert "QAT_LR=0.0002" in cmd and "QAT_CLIP=10.0" in cmd
     log = tmp_path / "rp-job.log"
     # the same shape as rp's launch_command: ( ${JOB_CMD} 2>&1 | tee "$LOG" )
     subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)

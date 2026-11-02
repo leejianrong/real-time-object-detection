@@ -9,6 +9,7 @@ branches on `training` and cannot be symbolically traced.
 from __future__ import annotations
 
 from collections.abc import Iterable
+from pathlib import Path
 
 import torch
 from torch import nn
@@ -95,3 +96,13 @@ def calibrate(model: nn.Module, batches: Iterable[torch.Tensor]) -> None:
         for b in batches:
             model(b)
     model.apply(torch.ao.quantization.disable_observer)
+
+
+def load_qat_checkpoint(path: Path) -> nn.Module:
+    """Rebuild the fake-quant model and load a checkpoint saved by `rtod qat` (weights AND the
+    trained quantizer ranges), so the QDQ graph can be exported without retraining."""
+    from rtod.models import build_yolox_tiny
+
+    model = prepare_qat(build_yolox_tiny())
+    model.load_state_dict(torch.load(path, map_location="cpu"))
+    return model.eval()
