@@ -65,6 +65,9 @@ def main(argv: list[str] | None = None) -> int:
     q.add_argument("fp32", type=Path)
     q.add_argument("out", type=Path)
     q.add_argument("--calib", type=int, default=5000, help="calibration images from train10k")
+    q.add_argument(
+        "--conv-only", action="store_true", help="quantize only Conv (like the QAT graph)"
+    )
     b = sub.add_parser("bench", help="CPU latency benchmark, writes results JSON")
     b.add_argument("model", type=Path)
     b.add_argument("--variant", required=True, help="e.g. yolox-tiny/fp32")
@@ -176,7 +179,8 @@ def main(argv: list[str] | None = None) -> int:
         from rtod.quant import quantize_ptq
 
         calib = coco.read_ids("train10k")[: args.calib]
-        print(quantize_ptq(args.fp32, args.out, coco.fetch_images(calib, "train")))
+        ops = ["Conv"] if args.conv_only else None
+        print(quantize_ptq(args.fp32, args.out, coco.fetch_images(calib, "train"), ops))
         return 0
     val_ids = None if args.subset == "val" else coco.read_ids(args.subset)
     scores = coco.evaluate(args.model, val_ids, jackknife=args.jackknife)
