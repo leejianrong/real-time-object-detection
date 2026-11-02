@@ -57,7 +57,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = p.add_subparsers(dest="cmd", required=True)
     e = sub.add_parser("eval", help="COCO mAP of an ONNX model")
     e.add_argument("model", type=Path)
-    e.add_argument("--subset", choices=["val200", "val"], default="val")
+    e.add_argument("--subset", choices=["val200", "val", "val_dev", "val_test"], default="val")
+    e.add_argument("--jackknife", type=int, default=0, help="B subsets for a standard error")
     e.add_argument("--json", action="store_true")
     q = sub.add_parser("quantize", help="PTQ INT8 (QDQ) from an FP32 ONNX")
     q.add_argument("fp32", type=Path)
@@ -78,7 +79,12 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--lr", type=float, default=2e-4)
     t.add_argument("--clip", type=float, default=10.0, help="grad-norm clip threshold")
     t.add_argument("--device", default="cpu")
-    t.add_argument("--subset", choices=["train10k", "val200"], default="train10k")
+    t.add_argument("--subset", choices=["train10k", "train40k", "val200"], default="train10k")
+    t.add_argument("--seed", type=int, default=0)
+    t.add_argument("--ema", action="store_true", help="YOLOX-style EMA of the weights")
+    t.add_argument(
+        "--no-fake-quant", action="store_true", help="float control: same recipe, no QAT"
+    )
     t.add_argument("--workers", type=int, default=4)
     t.add_argument("--no-ptq", action="store_true", help="stop after exporting the folded model")
     t.add_argument("--out", type=Path, default=Path("qat_out"))
@@ -114,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
         from rtod.quant import quantize_ptq
         from rtod.train import export_folded, qat_finetune
 
-        split = "train" if args.subset == "train10k" else "val"
+        split = "val" if args.subset == "val200" else "train"
         ids = coco.read_ids(args.subset)
         args.out.mkdir(parents=True, exist_ok=True)
         model = qat_finetune(
@@ -127,9 +133,15 @@ def main(argv: list[str] | None = None) -> int:
             device=args.device,
             workers=args.workers,
             metrics_dir=args.out,
+            seed=args.seed,
+            ema=args.ema,
+            fake_quant=not args.no_fake_quant,
         )
         import torch
 
+        from rtod.manifest import write_manifest
+
+        write_manifest(args.out, vars(args), args.subset)
         torch.save(model.state_dict(), args.out / "qat_model.pt")  # incl. observer ranges (path A)
         folded = export_folded(model, args.out / "yolox_tiny_qat_folded.onnx")
         if args.no_ptq:
@@ -162,8 +174,9 @@ def main(argv: list[str] | None = None) -> int:
         calib = coco.read_ids("train10k")[: args.calib]
         print(quantize_ptq(args.fp32, args.out, coco.fetch_images(calib, "train")))
         return 0
-    val_ids = coco.read_ids("val200") if args.subset == "val200" else None
-    res = {"model": str(args.model), "subset": args.subset, **coco.evaluate(args.model, val_ids)}
+    val_ids = None if args.subset == "val" else coco.read_ids(args.subset)
+    scores = coco.evaluate(args.model, val_ids, jackknife=args.jackknife)
+    res = {"model": str(args.model), "subset": args.subset, **scores}
     print(json.dumps(res) if args.json else res)
     return 0
 
