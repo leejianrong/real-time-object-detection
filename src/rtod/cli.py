@@ -84,7 +84,8 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--device", default="cpu")
     t.add_argument("--subset", choices=["train10k", "train40k", "val200"], default="train10k")
     t.add_argument("--seed", type=int, default=0)
-    t.add_argument("--ema", action="store_true", help="YOLOX-style EMA of the weights")
+    t.add_argument("--ema", action="store_true", help="EMA of the weights (fixed decay)")
+    t.add_argument("--ema-decay", type=float, default=0.999)
     t.add_argument(
         "--no-fake-quant", action="store_true", help="float control: same recipe, no QAT"
     )
@@ -139,6 +140,7 @@ def main(argv: list[str] | None = None) -> int:
             metrics_dir=args.out,
             seed=args.seed,
             ema=args.ema,
+            ema_decay=args.ema_decay,
             fake_quant=not args.no_fake_quant,
         )
         import torch

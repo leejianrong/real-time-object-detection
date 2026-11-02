@@ -17,21 +17,19 @@ def test_seed_everything_makes_torch_and_numpy_repeat():
     assert torch.equal(a[0], b[0]) and (a[1] == b[1]).all()
 
 
-def test_ema_averages_parameters_but_copies_buffers():
+def test_ema_has_a_fixed_decay_and_copies_buffers():
     live = torch.nn.BatchNorm1d(2)
     ema = Ema(live, decay=0.9)
     with torch.no_grad():
         live.weight.fill_(5.0)
         live.running_mean.fill_(3.0)
     ema.update(live)
-    # decay ramps from 0: d = 0.9 * (1 - exp(-1/2000)) ~ 0.00045, so it tracks the live weight
-    assert 4.9 < float(ema.model.weight[0]) <= 5.0
+    # fixed decay: one step moves 10% of the way from the start (1.0) toward 5.0, no warm-up ramp
+    assert abs(float(ema.model.weight[0]) - 1.4) < 1e-6
     assert float(ema.model.running_mean[0]) == 3.0  # buffer copied, not averaged
-    for _ in range(5000):  # a long run: decay saturates near 0.9 and lags behind a moving target
-        with torch.no_grad():
-            live.weight.fill_(9.0)
+    for _ in range(200):
         ema.update(live)
-    assert abs(float(ema.model.weight[0]) - 9.0) < 0.5
+    assert abs(float(ema.model.weight[0]) - 5.0) < 1e-3
 
 
 def test_lists_have_the_documented_relationships():
