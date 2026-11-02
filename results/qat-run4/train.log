@@ -1,0 +1,483 @@
+/usr/local/lib/python3.11/dist-packages/rtod/models.py:48: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  ckpt: dict[str, Any] = torch.load(path or fetch_official_weights(), map_location="cpu")
+DATA split=train fetched=500/10000 rate=18.5/s
+DATA split=train fetched=1000/10000 rate=18.5/s
+DATA split=train fetched=1500/10000 rate=18.8/s
+DATA split=train fetched=2000/10000 rate=18.9/s
+DATA split=train fetched=2500/10000 rate=18.9/s
+DATA split=train fetched=3000/10000 rate=19.1/s
+DATA split=train fetched=3500/10000 rate=18.7/s
+DATA split=train fetched=4000/10000 rate=18.9/s
+DATA split=train fetched=4500/10000 rate=18.9/s
+DATA split=train fetched=5000/10000 rate=18.9/s
+DATA split=train fetched=5500/10000 rate=18.9/s
+DATA split=train fetched=6000/10000 rate=19.0/s
+DATA split=train fetched=6500/10000 rate=19.0/s
+DATA split=train fetched=7000/10000 rate=18.9/s
+DATA split=train fetched=7500/10000 rate=18.9/s
+DATA split=train fetched=8000/10000 rate=19.0/s
+DATA split=train fetched=8500/10000 rate=18.9/s
+DATA split=train fetched=9000/10000 rate=18.9/s
+DATA split=train fetched=9500/10000 rate=18.9/s
+DATA split=train fetched=10000/10000 rate=18.8/s
+/usr/local/lib/python3.11/dist-packages/rtod/_yolox/yolo_head.py:470: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=False):
+TRAIN step=1/1250 loss=4.196 iou=1.694 conf=1.868 cls=0.633 lr=2.00e-04 gnorm=71.51 it_s=0.47 eta_s=2667 gpu_mem_mb=1961
+TRAIN step=10/1250 loss=4.809 iou=2.030 conf=1.967 cls=0.812 lr=2.00e-04 gnorm=495.91 it_s=2.31 eta_s=537 gpu_mem_mb=2029
+TRAIN step=20/1250 loss=5.710 iou=1.892 conf=2.732 cls=1.087 lr=2.00e-04 gnorm=244.12 it_s=2.93 eta_s=420 gpu_mem_mb=2029
+TRAIN step=30/1250 loss=5.865 iou=2.140 conf=2.833 cls=0.892 lr=2.00e-04 gnorm=530.71 it_s=3.21 eta_s=380 gpu_mem_mb=2029
+TRAIN step=40/1250 loss=6.729 iou=2.011 conf=3.228 cls=1.490 lr=2.00e-04 gnorm=538.33 it_s=3.37 eta_s=359 gpu_mem_mb=2034
+TRAIN step=50/1250 loss=6.159 iou=1.975 conf=2.959 cls=1.226 lr=1.99e-04 gnorm=786.21 it_s=3.49 eta_s=344 gpu_mem_mb=2034
+TRAIN step=60/1250 loss=5.982 iou=2.146 conf=2.757 cls=1.079 lr=1.99e-04 gnorm=406.45 it_s=3.58 eta_s=333 gpu_mem_mb=2034
+TRAIN step=70/1250 loss=5.311 iou=2.173 conf=2.280 cls=0.857 lr=1.99e-04 gnorm=308.99 it_s=3.63 eta_s=325 gpu_mem_mb=2034
+TRAIN step=80/1250 loss=4.916 iou=1.815 conf=2.235 cls=0.866 lr=1.98e-04 gnorm=321.81 it_s=3.67 eta_s=318 gpu_mem_mb=2034
+TRAIN step=90/1250 loss=8.153 iou=2.390 conf=3.620 cls=2.143 lr=1.98e-04 gnorm=880.93 it_s=3.72 eta_s=312 gpu_mem_mb=2034
+TRAIN step=100/1250 loss=5.962 iou=1.878 conf=2.939 cls=1.145 lr=1.97e-04 gnorm=287.50 it_s=3.73 eta_s=308 gpu_mem_mb=2034
+TRAIN step=110/1250 loss=4.904 iou=1.854 conf=2.109 cls=0.941 lr=1.96e-04 gnorm=160.72 it_s=3.76 eta_s=303 gpu_mem_mb=2034
+TRAIN step=120/1250 loss=5.075 iou=1.883 conf=2.248 cls=0.945 lr=1.96e-04 gnorm=135.44 it_s=3.78 eta_s=299 gpu_mem_mb=2034
+TRAIN step=130/1250 loss=5.623 iou=2.023 conf=2.500 cls=1.100 lr=1.95e-04 gnorm=309.97 it_s=3.79 eta_s=295 gpu_mem_mb=2034
+TRAIN step=140/1250 loss=5.255 iou=1.972 conf=2.288 cls=0.994 lr=1.94e-04 gnorm=116.41 it_s=3.81 eta_s=291 gpu_mem_mb=2034
+TRAIN step=150/1250 loss=5.130 iou=1.881 conf=2.339 cls=0.911 lr=1.93e-04 gnorm=154.60 it_s=3.83 eta_s=287 gpu_mem_mb=2034
+TRAIN step=160/1250 loss=4.966 iou=1.766 conf=2.355 cls=0.845 lr=1.92e-04 gnorm=160.05 it_s=3.84 eta_s=284 gpu_mem_mb=2034
+TRAIN step=170/1250 loss=4.593 iou=1.646 conf=2.212 cls=0.735 lr=1.91e-04 gnorm=72.85 it_s=3.85 eta_s=281 gpu_mem_mb=2034
+TRAIN step=180/1250 loss=4.852 iou=1.902 conf=1.969 cls=0.981 lr=1.90e-04 gnorm=107.37 it_s=3.86 eta_s=277 gpu_mem_mb=2034
+TRAIN step=190/1250 loss=5.378 iou=2.170 conf=2.412 cls=0.797 lr=1.89e-04 gnorm=254.52 it_s=3.87 eta_s=274 gpu_mem_mb=2034
+TRAIN step=200/1250 loss=5.190 iou=1.994 conf=2.310 cls=0.886 lr=1.88e-04 gnorm=75.09 it_s=3.88 eta_s=271 gpu_mem_mb=2038
+TRAIN step=210/1250 loss=5.322 iou=1.957 conf=2.328 cls=1.038 lr=1.87e-04 gnorm=291.96 it_s=3.89 eta_s=267 gpu_mem_mb=2038
+TRAIN step=220/1250 loss=5.494 iou=1.960 conf=2.505 cls=1.028 lr=1.85e-04 gnorm=407.15 it_s=3.90 eta_s=264 gpu_mem_mb=2038
+TRAIN step=230/1250 loss=4.967 iou=1.940 conf=2.056 cls=0.970 lr=1.84e-04 gnorm=92.22 it_s=3.90 eta_s=261 gpu_mem_mb=2038
+TRAIN step=240/1250 loss=5.255 iou=1.874 conf=2.465 cls=0.916 lr=1.82e-04 gnorm=88.41 it_s=3.86 eta_s=262 gpu_mem_mb=2038
+TRAIN step=250/1250 loss=4.552 iou=1.886 conf=1.808 cls=0.858 lr=1.81e-04 gnorm=90.13 it_s=3.84 eta_s=260 gpu_mem_mb=2038
+TRAIN step=260/1250 loss=4.544 iou=1.644 conf=2.001 cls=0.899 lr=1.80e-04 gnorm=84.49 it_s=3.84 eta_s=258 gpu_mem_mb=2038
+TRAIN step=270/1250 loss=4.939 iou=2.102 conf=2.025 cls=0.812 lr=1.78e-04 gnorm=58.72 it_s=3.85 eta_s=255 gpu_mem_mb=2038
+TRAIN step=280/1250 loss=4.901 iou=1.974 conf=2.055 cls=0.872 lr=1.76e-04 gnorm=176.48 it_s=3.85 eta_s=252 gpu_mem_mb=2038
+TRAIN step=290/1250 loss=5.361 iou=2.053 conf=2.140 cls=1.168 lr=1.75e-04 gnorm=63.97 it_s=3.85 eta_s=249 gpu_mem_mb=2038
+TRAIN step=300/1250 loss=5.719 iou=2.090 conf=2.332 cls=1.297 lr=1.73e-04 gnorm=208.48 it_s=3.86 eta_s=246 gpu_mem_mb=2038
+TRAIN step=310/1250 loss=4.710 iou=1.757 conf=2.059 cls=0.894 lr=1.71e-04 gnorm=96.05 it_s=3.86 eta_s=244 gpu_mem_mb=2038
+TRAIN step=320/1250 loss=5.025 iou=2.008 conf=2.099 cls=0.918 lr=1.70e-04 gnorm=110.33 it_s=3.86 eta_s=241 gpu_mem_mb=2038
+TRAIN step=330/1250 loss=5.214 iou=2.090 conf=2.187 cls=0.937 lr=1.68e-04 gnorm=145.39 it_s=3.87 eta_s=238 gpu_mem_mb=2059
+TRAIN step=340/1250 loss=5.014 iou=1.984 conf=2.060 cls=0.971 lr=1.66e-04 gnorm=83.06 it_s=3.87 eta_s=235 gpu_mem_mb=2059
+TRAIN step=350/1250 loss=4.737 iou=1.856 conf=2.143 cls=0.738 lr=1.64e-04 gnorm=74.03 it_s=3.87 eta_s=232 gpu_mem_mb=2059
+TRAIN step=360/1250 loss=4.757 iou=1.877 conf=2.106 cls=0.774 lr=1.62e-04 gnorm=66.25 it_s=3.88 eta_s=230 gpu_mem_mb=2059
+TRAIN step=370/1250 loss=5.467 iou=1.801 conf=2.624 cls=1.041 lr=1.60e-04 gnorm=251.29 it_s=3.88 eta_s=227 gpu_mem_mb=2059
+TRAIN step=380/1250 loss=4.544 iou=1.641 conf=1.855 cls=1.049 lr=1.58e-04 gnorm=83.95 it_s=3.89 eta_s=224 gpu_mem_mb=2059
+TRAIN step=390/1250 loss=5.458 iou=2.066 conf=2.443 cls=0.949 lr=1.56e-04 gnorm=183.98 it_s=3.89 eta_s=221 gpu_mem_mb=2059
+TRAIN step=400/1250 loss=4.943 iou=1.948 conf=2.168 cls=0.827 lr=1.54e-04 gnorm=250.48 it_s=3.90 eta_s=218 gpu_mem_mb=2059
+TRAIN step=410/1250 loss=5.242 iou=2.144 conf=2.268 cls=0.831 lr=1.52e-04 gnorm=110.18 it_s=3.90 eta_s=215 gpu_mem_mb=2059
+TRAIN step=420/1250 loss=4.919 iou=1.804 conf=2.154 cls=0.960 lr=1.49e-04 gnorm=53.93 it_s=3.90 eta_s=213 gpu_mem_mb=2061
+TRAIN step=430/1250 loss=4.879 iou=1.881 conf=2.204 cls=0.795 lr=1.47e-04 gnorm=116.72 it_s=3.91 eta_s=210 gpu_mem_mb=2061
+TRAIN step=440/1250 loss=4.672 iou=2.033 conf=1.901 cls=0.738 lr=1.45e-04 gnorm=50.75 it_s=3.91 eta_s=207 gpu_mem_mb=2061
+TRAIN step=450/1250 loss=4.998 iou=1.974 conf=2.222 cls=0.802 lr=1.43e-04 gnorm=83.34 it_s=3.91 eta_s=204 gpu_mem_mb=2061
+TRAIN step=460/1250 loss=5.332 iou=2.274 conf=2.198 cls=0.861 lr=1.41e-04 gnorm=140.86 it_s=3.91 eta_s=202 gpu_mem_mb=2061
+TRAIN step=470/1250 loss=5.306 iou=2.250 conf=2.149 cls=0.907 lr=1.38e-04 gnorm=69.29 it_s=3.92 eta_s=199 gpu_mem_mb=2061
+TRAIN step=480/1250 loss=5.324 iou=1.948 conf=2.299 cls=1.076 lr=1.36e-04 gnorm=148.35 it_s=3.92 eta_s=196 gpu_mem_mb=2061
+TRAIN step=490/1250 loss=5.208 iou=1.961 conf=2.170 cls=1.077 lr=1.34e-04 gnorm=198.06 it_s=3.92 eta_s=194 gpu_mem_mb=2061
+TRAIN step=500/1250 loss=4.850 iou=1.887 conf=2.120 cls=0.843 lr=1.31e-04 gnorm=83.96 it_s=3.92 eta_s=191 gpu_mem_mb=2061
+TRAIN step=510/1250 loss=4.921 iou=2.086 conf=2.005 cls=0.830 lr=1.29e-04 gnorm=98.99 it_s=3.92 eta_s=189 gpu_mem_mb=2061
+TRAIN step=520/1250 loss=4.512 iou=1.841 conf=1.969 cls=0.702 lr=1.26e-04 gnorm=42.95 it_s=3.93 eta_s=186 gpu_mem_mb=2061
+TRAIN step=530/1250 loss=4.668 iou=1.756 conf=2.084 cls=0.828 lr=1.24e-04 gnorm=164.51 it_s=3.93 eta_s=183 gpu_mem_mb=2061
+TRAIN step=540/1250 loss=5.133 iou=1.940 conf=2.119 cls=1.074 lr=1.21e-04 gnorm=91.82 it_s=3.93 eta_s=181 gpu_mem_mb=2061
+TRAIN step=550/1250 loss=4.718 iou=1.900 conf=1.963 cls=0.855 lr=1.19e-04 gnorm=100.60 it_s=3.93 eta_s=178 gpu_mem_mb=2061
+TRAIN step=560/1250 loss=4.740 iou=1.818 conf=1.958 cls=0.964 lr=1.17e-04 gnorm=290.04 it_s=3.93 eta_s=175 gpu_mem_mb=2061
+TRAIN step=570/1250 loss=5.150 iou=2.287 conf=2.090 cls=0.773 lr=1.14e-04 gnorm=83.84 it_s=3.93 eta_s=173 gpu_mem_mb=2061
+TRAIN step=580/1250 loss=5.148 iou=1.897 conf=2.280 cls=0.970 lr=1.12e-04 gnorm=77.52 it_s=3.94 eta_s=170 gpu_mem_mb=2061
+TRAIN step=590/1250 loss=4.568 iou=1.928 conf=1.919 cls=0.721 lr=1.09e-04 gnorm=104.28 it_s=3.94 eta_s=168 gpu_mem_mb=2061
+TRAIN step=600/1250 loss=4.997 iou=1.884 conf=2.285 cls=0.829 lr=1.07e-04 gnorm=77.38 it_s=3.94 eta_s=165 gpu_mem_mb=2061
+TRAIN step=610/1250 loss=4.837 iou=1.952 conf=2.109 cls=0.777 lr=1.04e-04 gnorm=53.36 it_s=3.94 eta_s=162 gpu_mem_mb=2061
+TRAIN step=620/1250 loss=5.063 iou=2.144 conf=2.100 cls=0.819 lr=1.02e-04 gnorm=158.13 it_s=3.94 eta_s=160 gpu_mem_mb=2061
+TRAIN step=630/1250 loss=4.857 iou=1.776 conf=2.213 cls=0.869 lr=9.90e-05 gnorm=75.63 it_s=3.92 eta_s=158 gpu_mem_mb=2061
+TRAIN step=640/1250 loss=4.086 iou=1.609 conf=1.831 cls=0.646 lr=9.65e-05 gnorm=64.09 it_s=3.92 eta_s=156 gpu_mem_mb=2061
+TRAIN step=650/1250 loss=5.018 iou=1.720 conf=2.459 cls=0.839 lr=9.40e-05 gnorm=100.14 it_s=3.93 eta_s=153 gpu_mem_mb=2061
+TRAIN step=660/1250 loss=5.124 iou=2.037 conf=2.272 cls=0.815 lr=9.15e-05 gnorm=194.72 it_s=3.93 eta_s=150 gpu_mem_mb=2061
+TRAIN step=670/1250 loss=5.456 iou=2.032 conf=2.393 cls=1.031 lr=8.90e-05 gnorm=154.05 it_s=3.93 eta_s=148 gpu_mem_mb=2061
+TRAIN step=680/1250 loss=4.294 iou=1.637 conf=1.815 cls=0.842 lr=8.65e-05 gnorm=238.47 it_s=3.93 eta_s=145 gpu_mem_mb=2061
+TRAIN step=690/1250 loss=5.188 iou=2.028 conf=2.168 cls=0.992 lr=8.40e-05 gnorm=241.15 it_s=3.93 eta_s=142 gpu_mem_mb=2061
+TRAIN step=700/1250 loss=5.306 iou=1.967 conf=2.422 cls=0.916 lr=8.15e-05 gnorm=104.06 it_s=3.93 eta_s=140 gpu_mem_mb=2061
+TRAIN step=710/1250 loss=3.944 iou=1.570 conf=1.727 cls=0.647 lr=7.90e-05 gnorm=64.25 it_s=3.93 eta_s=137 gpu_mem_mb=2061
+TRAIN step=720/1250 loss=4.741 iou=1.770 conf=2.332 cls=0.639 lr=7.66e-05 gnorm=189.45 it_s=3.94 eta_s=135 gpu_mem_mb=2061
+TRAIN step=730/1250 loss=5.158 iou=1.911 conf=2.362 cls=0.886 lr=7.42e-05 gnorm=113.55 it_s=3.94 eta_s=132 gpu_mem_mb=2061
+TRAIN step=740/1250 loss=4.576 iou=1.984 conf=1.880 cls=0.712 lr=7.17e-05 gnorm=42.13 it_s=3.94 eta_s=130 gpu_mem_mb=2061
+TRAIN step=750/1250 loss=4.800 iou=1.782 conf=2.182 cls=0.836 lr=6.93e-05 gnorm=265.19 it_s=3.94 eta_s=127 gpu_mem_mb=2061
+TRAIN step=760/1250 loss=4.793 iou=2.041 conf=1.886 cls=0.866 lr=6.70e-05 gnorm=72.76 it_s=3.94 eta_s=124 gpu_mem_mb=2061
+TRAIN step=770/1250 loss=5.343 iou=1.907 conf=2.554 cls=0.882 lr=6.46e-05 gnorm=69.18 it_s=3.94 eta_s=122 gpu_mem_mb=2061
+TRAIN step=780/1250 loss=4.917 iou=1.954 conf=2.093 cls=0.870 lr=6.23e-05 gnorm=75.04 it_s=3.95 eta_s=119 gpu_mem_mb=2061
+TRAIN step=790/1250 loss=4.694 iou=1.976 conf=1.967 cls=0.751 lr=5.99e-05 gnorm=102.23 it_s=3.95 eta_s=117 gpu_mem_mb=2061
+TRAIN step=800/1250 loss=4.856 iou=1.979 conf=2.111 cls=0.766 lr=5.76e-05 gnorm=68.43 it_s=3.95 eta_s=114 gpu_mem_mb=2061
+TRAIN step=810/1250 loss=4.362 iou=1.746 conf=1.927 cls=0.688 lr=5.54e-05 gnorm=51.80 it_s=3.95 eta_s=111 gpu_mem_mb=2061
+TRAIN step=820/1250 loss=5.190 iou=1.865 conf=2.394 cls=0.932 lr=5.32e-05 gnorm=101.22 it_s=3.95 eta_s=109 gpu_mem_mb=2061
+TRAIN step=830/1250 loss=4.958 iou=1.880 conf=2.423 cls=0.655 lr=5.09e-05 gnorm=83.25 it_s=3.95 eta_s=106 gpu_mem_mb=2061
+TRAIN step=840/1250 loss=4.504 iou=2.008 conf=1.792 cls=0.704 lr=4.88e-05 gnorm=208.81 it_s=3.95 eta_s=104 gpu_mem_mb=2061
+TRAIN step=850/1250 loss=4.598 iou=1.660 conf=2.017 cls=0.921 lr=4.66e-05 gnorm=69.38 it_s=3.95 eta_s=101 gpu_mem_mb=2061
+TRAIN step=860/1250 loss=4.278 iou=1.880 conf=1.679 cls=0.718 lr=4.45e-05 gnorm=47.39 it_s=3.95 eta_s=99 gpu_mem_mb=2061
+TRAIN step=870/1250 loss=4.889 iou=1.917 conf=2.120 cls=0.853 lr=4.24e-05 gnorm=94.82 it_s=3.95 eta_s=96 gpu_mem_mb=2061
+TRAIN step=880/1250 loss=4.426 iou=1.717 conf=2.013 cls=0.696 lr=4.04e-05 gnorm=52.59 it_s=3.95 eta_s=94 gpu_mem_mb=2061
+TRAIN step=890/1250 loss=4.577 iou=1.951 conf=1.963 cls=0.663 lr=3.84e-05 gnorm=87.89 it_s=3.96 eta_s=91 gpu_mem_mb=2061
+TRAIN step=900/1250 loss=4.248 iou=1.757 conf=1.800 cls=0.691 lr=3.65e-05 gnorm=76.88 it_s=3.96 eta_s=88 gpu_mem_mb=2061
+TRAIN step=910/1250 loss=4.551 iou=2.039 conf=1.709 cls=0.803 lr=3.45e-05 gnorm=115.56 it_s=3.96 eta_s=86 gpu_mem_mb=2061
+TRAIN step=920/1250 loss=4.347 iou=1.702 conf=1.833 cls=0.812 lr=3.27e-05 gnorm=170.15 it_s=3.96 eta_s=83 gpu_mem_mb=2061
+TRAIN step=930/1250 loss=4.852 iou=1.819 conf=2.079 cls=0.954 lr=3.08e-05 gnorm=87.52 it_s=3.96 eta_s=81 gpu_mem_mb=2061
+TRAIN step=940/1250 loss=4.851 iou=1.767 conf=2.026 cls=1.057 lr=2.90e-05 gnorm=89.49 it_s=3.96 eta_s=78 gpu_mem_mb=2061
+TRAIN step=950/1250 loss=4.485 iou=2.020 conf=1.773 cls=0.692 lr=2.73e-05 gnorm=60.76 it_s=3.96 eta_s=76 gpu_mem_mb=2061
+TRAIN step=960/1250 loss=4.498 iou=1.682 conf=1.946 cls=0.870 lr=2.56e-05 gnorm=59.18 it_s=3.96 eta_s=73 gpu_mem_mb=2061
+TRAIN step=970/1250 loss=4.394 iou=1.969 conf=1.730 cls=0.694 lr=2.39e-05 gnorm=48.58 it_s=3.96 eta_s=71 gpu_mem_mb=2061
+TRAIN step=980/1250 loss=3.974 iou=1.740 conf=1.668 cls=0.567 lr=2.23e-05 gnorm=69.02 it_s=3.96 eta_s=68 gpu_mem_mb=2061
+TRAIN step=990/1250 loss=4.821 iou=2.000 conf=1.988 cls=0.833 lr=2.08e-05 gnorm=57.71 it_s=3.96 eta_s=66 gpu_mem_mb=2061
+TRAIN step=1000/1250 loss=4.930 iou=2.013 conf=2.015 cls=0.903 lr=1.92e-05 gnorm=55.77 it_s=3.96 eta_s=63 gpu_mem_mb=2061
+TRAIN step=1010/1250 loss=4.755 iou=1.776 conf=2.114 cls=0.865 lr=1.78e-05 gnorm=92.51 it_s=3.96 eta_s=61 gpu_mem_mb=2061
+TRAIN step=1020/1250 loss=4.511 iou=1.908 conf=1.859 cls=0.745 lr=1.64e-05 gnorm=88.48 it_s=3.96 eta_s=58 gpu_mem_mb=2061
+TRAIN step=1030/1250 loss=4.495 iou=1.915 conf=1.827 cls=0.753 lr=1.50e-05 gnorm=35.31 it_s=3.96 eta_s=56 gpu_mem_mb=2061
+TRAIN step=1040/1250 loss=4.303 iou=1.797 conf=1.861 cls=0.645 lr=1.37e-05 gnorm=63.82 it_s=3.96 eta_s=53 gpu_mem_mb=2061
+TRAIN step=1050/1250 loss=4.329 iou=1.847 conf=1.808 cls=0.674 lr=1.25e-05 gnorm=51.73 it_s=3.96 eta_s=50 gpu_mem_mb=2061
+TRAIN step=1060/1250 loss=4.137 iou=1.471 conf=1.949 cls=0.717 lr=1.13e-05 gnorm=154.05 it_s=3.96 eta_s=48 gpu_mem_mb=2061
+TRAIN step=1070/1250 loss=4.778 iou=1.752 conf=2.131 cls=0.895 lr=1.02e-05 gnorm=102.26 it_s=3.96 eta_s=45 gpu_mem_mb=2061
+TRAIN step=1080/1250 loss=4.918 iou=1.957 conf=2.036 cls=0.925 lr=9.09e-06 gnorm=175.71 it_s=3.96 eta_s=43 gpu_mem_mb=2061
+TRAIN step=1090/1250 loss=4.480 iou=1.812 conf=1.975 cls=0.693 lr=8.08e-06 gnorm=69.16 it_s=3.96 eta_s=40 gpu_mem_mb=2061
+TRAIN step=1100/1250 loss=4.810 iou=1.770 conf=2.190 cls=0.850 lr=7.12e-06 gnorm=262.62 it_s=3.96 eta_s=38 gpu_mem_mb=2061
+TRAIN step=1110/1250 loss=4.539 iou=1.889 conf=1.904 cls=0.746 lr=6.21e-06 gnorm=112.34 it_s=3.96 eta_s=35 gpu_mem_mb=2061
+TRAIN step=1120/1250 loss=4.277 iou=1.904 conf=1.726 cls=0.647 lr=5.37e-06 gnorm=36.38 it_s=3.96 eta_s=33 gpu_mem_mb=2061
+TRAIN step=1130/1250 loss=4.350 iou=1.795 conf=1.870 cls=0.685 lr=4.59e-06 gnorm=68.05 it_s=3.96 eta_s=30 gpu_mem_mb=2061
+TRAIN step=1140/1250 loss=4.807 iou=1.811 conf=2.220 cls=0.775 lr=3.87e-06 gnorm=95.36 it_s=3.96 eta_s=28 gpu_mem_mb=2061
+TRAIN step=1150/1250 loss=4.459 iou=1.763 conf=2.017 cls=0.679 lr=3.20e-06 gnorm=82.73 it_s=3.97 eta_s=25 gpu_mem_mb=2061
+TRAIN step=1160/1250 loss=4.013 iou=1.668 conf=1.688 cls=0.656 lr=2.60e-06 gnorm=162.66 it_s=3.97 eta_s=23 gpu_mem_mb=2061
+TRAIN step=1170/1250 loss=5.025 iou=2.080 conf=2.123 cls=0.821 lr=2.06e-06 gnorm=68.52 it_s=3.97 eta_s=20 gpu_mem_mb=2061
+TRAIN step=1180/1250 loss=5.096 iou=1.769 conf=2.280 cls=1.047 lr=1.59e-06 gnorm=96.00 it_s=3.97 eta_s=18 gpu_mem_mb=2061
+TRAIN step=1190/1250 loss=4.358 iou=1.667 conf=1.890 cls=0.801 lr=1.17e-06 gnorm=82.63 it_s=3.97 eta_s=15 gpu_mem_mb=2061
+TRAIN step=1200/1250 loss=4.450 iou=1.737 conf=1.930 cls=0.784 lr=8.20e-07 gnorm=57.96 it_s=3.97 eta_s=13 gpu_mem_mb=2061
+TRAIN step=1210/1250 loss=4.598 iou=1.788 conf=1.977 cls=0.832 lr=5.30e-07 gnorm=64.85 it_s=3.97 eta_s=10 gpu_mem_mb=2061
+TRAIN step=1220/1250 loss=4.543 iou=1.958 conf=1.867 cls=0.719 lr=3.03e-07 gnorm=111.26 it_s=3.97 eta_s=8 gpu_mem_mb=2061
+TRAIN step=1230/1250 loss=4.523 iou=1.836 conf=2.012 cls=0.676 lr=1.39e-07 gnorm=97.21 it_s=3.97 eta_s=5 gpu_mem_mb=2061
+TRAIN step=1240/1250 loss=4.450 iou=1.755 conf=1.957 cls=0.738 lr=3.82e-08 gnorm=132.12 it_s=3.97 eta_s=3 gpu_mem_mb=2061
+TRAIN step=1250/1250 loss=4.001 iou=1.683 conf=1.712 cls=0.607 lr=3.16e-10 gnorm=71.99 it_s=3.97 eta_s=0 gpu_mem_mb=2061
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.stem.conv.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.stem.conv.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.1.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.1.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.1.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.1.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.1.conv3.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.1.conv3.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.1.m.0.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.1.m.0.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.1.m.0.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark2.1.m.0.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.conv3.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.conv3.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.0.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.0.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.0.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.0.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.1.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.1.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.1.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.1.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.2.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.2.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.2.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark3.1.m.2.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.conv3.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.conv3.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.0.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.0.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.0.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.0.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.1.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.1.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.1.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.1.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.2.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.2.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.2.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark4.1.m.2.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.1.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.1.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.1.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.1.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.2.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.2.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.2.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.2.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.2.conv3.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.2.conv3.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.2.m.0.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.2.m.0.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.2.m.0.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.backbone.dark5.2.m.0.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.lateral_conv0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.lateral_conv0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p4.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p4.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p4.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p4.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p4.conv3.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p4.conv3.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p4.m.0.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p4.m.0.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p4.m.0.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p4.m.0.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.reduce_conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.reduce_conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p3.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p3.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p3.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p3.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p3.conv3.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p3.conv3.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p3.m.0.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p3.m.0.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p3.m.0.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_p3.m.0.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.bu_conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.bu_conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n3.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n3.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n3.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n3.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n3.conv3.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n3.conv3.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n3.m.0.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n3.m.0.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n3.m.0.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n3.m.0.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.bu_conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.bu_conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n4.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n4.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n4.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n4.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n4.conv3.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n4.conv3.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n4.m.0.conv1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n4.m.0.conv1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n4.m.0.conv2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'backbone.C3_n4.m.0.conv2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.0.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.0.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.0.1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.0.1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.1.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.1.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.1.1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.1.1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.2.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.2.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.2.1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_convs.2.1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.0.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.0.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.0.1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.0.1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.1.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.1.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.1.1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.1.1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.2.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.2.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.2.1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_convs.2.1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_preds.0.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_preds.0.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_preds.1.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_preds.1.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_preds.2.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.cls_preds.2.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_preds.0.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_preds.0.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_preds.1.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_preds.1.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_preds.2.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.reg_preds.2.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.obj_preds.0.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.obj_preds.0.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.obj_preds.1.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.obj_preds.1.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.obj_preds.2.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.obj_preds.2.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.stems.0.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.stems.0.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.stems.1.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.stems.1.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.stems.2.conv.w_fq.scale'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/usr/local/lib/python3.11/dist-packages/torch/onnx/utils.py:668: UserWarning: ONNX Preprocess - Removing mutation from node aten::copy_ on block input: 'head.stems.2.conv.w_fq.zero_point'. This changes graph semantics. (Triggered internally at ../torch/csrc/jit/passes/onnx/remove_inplace_ops_for_onnx.cpp:350.)
+  _C._jit_pass_onnx_remove_inplace_ops_for_onnx(graph, module)
+/workspace/qat_out/yolox_tiny_qat_folded.onnx
