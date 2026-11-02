@@ -105,4 +105,7 @@ def load_qat_checkpoint(path: Path) -> nn.Module:
 
     model = prepare_qat(build_yolox_tiny())
     model.load_state_dict(torch.load(path, map_location="cpu"))
+    # Training keeps the weight observers on; tracing an enabled observer runs an in-place copy_
+    # that the ONNX exporter cannot handle, so freeze every range before export.
+    model.apply(torch.ao.quantization.disable_observer)
     return model.eval()

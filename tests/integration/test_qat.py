@@ -61,3 +61,19 @@ def test_checkpoint_round_trip_keeps_weights_and_trained_ranges(data, tmp_path):
     loaded.head.decode_in_inference = True
     with torch.no_grad():
         torch.testing.assert_close(loaded(data[0]), expected)
+
+
+def test_checkpoint_with_observers_left_on_still_exports(data, tmp_path):
+    """Regression: `rtod qat` saves with weight observers enabled, which broke the ONNX export
+    ('aten::copy' unsupported) when the checkpoint was loaded for path A."""
+    torch.manual_seed(0)
+    q = prepare_qat(build_yolox_tiny())
+    q.head.decode_in_inference = True
+    calibrate(q, data)
+    for m in q.modules():
+        if hasattr(m, "w_fq"):
+            m.w_fq.enable_observer()
+    torch.save(q.state_dict(), tmp_path / "qat_model.pt")
+    loaded = load_qat_checkpoint(tmp_path / "qat_model.pt")
+    loaded.head.decode_in_inference = True
+    assert export_onnx(loaded, tmp_path / "qdq.onnx").stat().st_size > 0
