@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from rtod import coco
 
 
@@ -6,3 +8,8 @@ def test_lists_are_pinned_and_sized():
     assert len(val) == 200 and len(set(val)) == 200
     assert len(train) == 10_000 and len(set(train)) == 10_000
     assert train[:5000] == coco.read_ids("train10k")[:5000]  # first 5k is the calibration set
+
+
+def test_lists_ship_inside_the_package():
+    # regression: they once sat at the repo root, so a pip-installed copy (the pod) lost them
+    assert coco.LISTS.is_relative_to(Path(coco.__file__).parent)

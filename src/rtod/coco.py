@@ -1,6 +1,6 @@
 """COCO subsets and mAP evaluation (ADR-0006). Images are fetched by id and never committed.
 
-Id lists live in `data_lists/`: val200 (CI-sized), train10k (calibration/QAT/prune fine-tune;
+Id lists live in `src/rtod/id_lists/`: val200 (CI-sized), train10k (calibration/QAT/prune fine-tune;
 the first 5k are the calibration set). `make_lists` regenerates them from the annotation files.
 """
 
@@ -21,7 +21,7 @@ import numpy as np
 
 from rtod.detect import Detector, OrtDetector
 
-LISTS = Path(__file__).resolve().parents[2] / "data_lists"
+LISTS = Path(__file__).resolve().parent / "id_lists"
 CACHE = Path(".cache/coco")
 ANN_ZIP = "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
 IMG_URL = "http://images.cocodataset.org/{split}2017/{id:012d}.jpg"
