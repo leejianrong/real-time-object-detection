@@ -91,6 +91,14 @@ SWEEPS: dict[str, dict[str, str]] = {
         "float_ema9998": "--no-fake-quant --ema --ema-decay 0.9998",
         "float_lr1e5_ema9998": "--no-fake-quant --lr 1e-5 --ema --ema-decay 0.9998",
     },
+    # QAT at the learning rates float2 showed keep accuracy (5e-5 lost ~2.4 pt on val_dev, 1e-5 lost
+    # 0.3). BN is folded before training, so weights carry the BN scale and need small steps.
+    "qat3": {
+        "qat_lr1e5": "--lr 1e-5",
+        "qat_lr5e6": "--lr 5e-6",
+        "qat_lr2e6": "--lr 2e-6",
+        "qat_lr1e5_40k": "--lr 1e-5 --subset train40k",
+    },
 }
 
 

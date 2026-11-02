@@ -59,9 +59,9 @@ n=0
 for cfg in $(echo "$CONFIGS" | tr ',' '\n' | tr ' ' '\001') ; do
   cfg=$(echo "$cfg" | tr '\001' ' ') ; name="${cfg%%:*}" ; flags="${cfg#*:}" ; n=$((n+1))
   OUT=$W/runs/$name ; mkdir -p "$OUT"
-  phase train "config=$name flags='$flags' steps=$QAT_STEPS lr=${QAT_LR:-2e-4} clip=${QAT_CLIP:-10}"
+  phase train "config=$name flags='$flags' steps=$QAT_STEPS lr=${QAT_LR:-1e-5} clip=${QAT_CLIP:-100}"
   # shellcheck disable=SC2086  (flags are intentionally word-split)
-  rtod qat --subset train10k --steps "$QAT_STEPS" --lr "${QAT_LR:-2e-4}" --clip "${QAT_CLIP:-10}" \
+  rtod qat --subset train10k --steps "$QAT_STEPS" --lr "${QAT_LR:-1e-5}" --clip "${QAT_CLIP:-100}" \
     --seed 0 $flags --device cuda --no-ptq --out "$OUT" 2>&1 | tee "$LOGS/train_$name.log"
   test -s "$OUT/yolox_tiny_qat_folded.onnx"
   rtod plot "$OUT/metrics.jsonl" "$OUT/training.png" || say "plot failed (non-fatal)"

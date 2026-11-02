@@ -150,8 +150,8 @@ def test_bootstrap_output_reaches_rps_log_through_its_exact_wrapper(tmp_path):
 
     (tmp_path / "scripts").mkdir()
     (tmp_path / "scripts/job_qat.sh").write_text("echo JOB_OUTPUT_$RTOD_SHA\n")
-    cmd = bootstrap_cmd("abc123", job_env(5, 2e-4, 10.0), base=f"file://{tmp_path}")
-    assert 'QAT_LR="0.0002"' in cmd
+    cmd = bootstrap_cmd("abc123", job_env(5, 1e-5, 100.0), base=f"file://{tmp_path}")
+    assert 'QAT_LR="1e-05"' in cmd
     log = tmp_path / "rp-job.log"
     # the same shape as rp's launch_command: ( ${JOB_CMD} 2>&1 | tee "$LOG" )
     subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
@@ -161,7 +161,7 @@ def test_bootstrap_output_reaches_rps_log_through_its_exact_wrapper(tmp_path):
 def test_bootstrap_failure_is_reported_in_the_log_too(tmp_path):
     import subprocess
 
-    cmd = bootstrap_cmd("abc123", job_env(5, 2e-4, 10.0), base=f"file://{tmp_path}/missing")
+    cmd = bootstrap_cmd("abc123", job_env(5, 1e-5, 100.0), base=f"file://{tmp_path}/missing")
     log = tmp_path / "rp-job.log"
     subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
     assert "RTOD_FATAL phase=bootstrap" in log.read_text()

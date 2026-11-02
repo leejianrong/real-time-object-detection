@@ -140,5 +140,25 @@
     ],
     "max_hourly_usd": 0.4,
     "max_hours": 1.0
+  },
+  {
+    "job": "qat",
+    "hours": 1.046,
+    "usd": 0.4184,
+    "name": "qat",
+    "image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+    "cmd": "bash -c '(timeout 120 curl -fsSL https://raw.githubusercontent.com/leejianrong/real-time-object-detection/813be3f7c948e4aea46561a86819b1b2c9c10d57/scripts/job_qat.sh -o /tmp/job.sh && RTOD_SHA=\"813be3f7c948e4aea46561a86819b1b2c9c10d57\" QAT_STEPS=\"1250\" QAT_LR=\"5e-05\" QAT_CLIP=\"100.0\" QAT_CONFIGS=\"float:--no-fake-quant,float_ema:--no-fake-quant --ema,qat:,qat_ema:--ema,qat_ema_40k:--ema --subset train40k\" bash /tmp/job.sh) || echo \"RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?\"'",
+    "offers": [
+      [
+        "COMMUNITY",
+        "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"
+      ],
+      [
+        "SECURE",
+        "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"
+      ]
+    ],
+    "max_hourly_usd": 0.4,
+    "max_hours": 1.5
   }
 ]
