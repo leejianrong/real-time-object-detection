@@ -28,16 +28,10 @@ def _job_qat(args: argparse.Namespace) -> int:
     if not on_main:
         print(f"error: {sha} is not on origin/main; the pod installs from GitHub", file=sys.stderr)
         return 2
-    raw = f"https://raw.githubusercontent.com/leejianrong/real-time-object-detection/{sha}"
-    cmd = (
-        f"(timeout 120 curl -fsSL {raw}/scripts/job_qat.sh -o /tmp/job.sh "
-        f"&& RTOD_SHA={sha} QAT_STEPS={args.steps} bash /tmp/job.sh) "
-        '|| echo "RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?"'
-    )
     spec = jobs.JobSpec(
         name="qat",
         image="runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
-        cmd=cmd,
+        cmd=jobs.bootstrap_cmd(sha, args.steps),
         offers=(
             ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
             ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),

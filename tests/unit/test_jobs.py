@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from rtod.jobs import CapExceeded, JobSpec, Ledger, LogMonitor, RpProvider, run_job
+from rtod.jobs import CapExceeded, JobSpec, Ledger, LogMonitor, RpProvider, bootstrap_cmd, run_job
 
 SPEC = JobSpec(
     "qat", "img:tag", "python train.py", (("COMMUNITY", "A"), ("SECURE", "B,C")), 0.34, 2.0
@@ -129,3 +129,26 @@ def test_rp_env_follows_the_selected_offer():
     assert RpProvider.env(SPEC, 0)["RP_CLOUD_TYPE"] == "COMMUNITY"
     env = RpProvider.env(SPEC, 1)
     assert env["RP_CLOUD_TYPE"] == "SECURE" and env["RP_GPU_TYPE"] == "B,C"
+
+
+def test_bootstrap_output_reaches_rps_log_through_its_exact_wrapper(tmp_path):
+    """Regression: a trailing `|| echo` once made `| tee LOG` bind to the echo only, so the job's
+    output skipped rp's log and rp's idle watchdog killed the healthy pod."""
+    import subprocess
+
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts/job_qat.sh").write_text("echo JOB_OUTPUT_$RTOD_SHA\n")
+    cmd = bootstrap_cmd("abc123", 5, base=f"file://{tmp_path}")
+    log = tmp_path / "rp-job.log"
+    # the same shape as rp's launch_command: ( ${JOB_CMD} 2>&1 | tee "$LOG" )
+    subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
+    assert "JOB_OUTPUT_abc123" in log.read_text()
+
+
+def test_bootstrap_failure_is_reported_in_the_log_too(tmp_path):
+    import subprocess
+
+    cmd = bootstrap_cmd("abc123", 5, base=f"file://{tmp_path}/missing")
+    log = tmp_path / "rp-job.log"
+    subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
+    assert "RTOD_FATAL phase=bootstrap" in log.read_text()
