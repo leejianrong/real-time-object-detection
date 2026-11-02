@@ -18,12 +18,13 @@ class Fake:
 
     def follow(self):
         self.calls.append("follow")
+        yield "c1"
         if self.fail_follow:
             raise RuntimeError("job crashed")
-        return "code"
+        yield "c2"
 
     def fetch(self, code, dest):
-        self.calls.append("fetch")
+        self.calls.append(f"fetch:{code}:{dest.name}")
 
     def down(self):
         self.calls.append("down")
@@ -54,7 +55,7 @@ def test_teardown_and_charge_happen_even_when_the_job_crashes(tmp_path):
     fake = Fake(fail_follow=True)
     with pytest.raises(RuntimeError, match="crashed"):
         run_job(fake, ledger, SPEC, tmp_path)
-    assert fake.calls == ["up", "follow", "down"]
+    assert fake.calls == ["up", "follow", "fetch:c1:artifact1", "down"]  # artifact 1 is kept
     assert len(ledger.entries()) == 1
 
 
@@ -152,3 +153,14 @@ def test_bootstrap_failure_is_reported_in_the_log_too(tmp_path):
     log = tmp_path / "rp-job.log"
     subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
     assert "RTOD_FATAL phase=bootstrap" in log.read_text()
+
+
+def test_every_published_artifact_is_fetched_in_order(tmp_path):
+    fake = Fake()
+    run_job(fake, Ledger(tmp_path / "s.json"), SPEC, tmp_path)
+    assert fake.calls == ["up", "follow", "fetch:c1:artifact1", "fetch:c2:artifact2", "down"]
+
+
+def test_done_marker_is_reported_and_is_not_an_error():
+    mon = LogMonitor(start=0)
+    assert ("done", "RTOD t+0900s RTOD_DONE") in feed(mon, 5, "RTOD t+0900s RTOD_DONE")
