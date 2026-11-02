@@ -37,7 +37,7 @@ def _job_qat(args: argparse.Namespace) -> int:
             ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),
         ),
         max_hourly_usd=0.40,
-        max_hours=1.5,
+        max_hours=1.0,
     )
     ledger = jobs.Ledger()
     print(

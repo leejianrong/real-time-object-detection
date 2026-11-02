@@ -63,6 +63,10 @@ cp "$LOGS"/*.log "$OUT"/ 2>/dev/null || true
 tar -C $W -czf $W/qat_model.tgz qat_out
 publish rtodqat1 $W/qat_model.tgz
 
+# Stage 2 is opt-in. The pod's CPU is ~10x slower than a laptop for ORT calibration and eval (run 3: 40 min
+# for calibration, then the first eval did not finish before the lifetime cap), so by default PTQ and
+# evaluation run locally on the downloaded stage-1 model.
+if [ "${QAT_STAGE2:-0}" != 1 ] ; then phase done ; say "RTOD_DONE" ; exit 0 ; fi
 # Stage 2 (best effort, with progress): INT8 model and full-val2017 mAP.
 phase ptq "calibration images=${QAT_CALIB:-5000}"
 rtod quantize "$OUT/yolox_tiny_qat_folded.onnx" "$OUT/yolox_tiny_qat_int8.onnx" --calib "${QAT_CALIB:-5000}" 2>&1 | tee "$LOGS/ptq.log"
