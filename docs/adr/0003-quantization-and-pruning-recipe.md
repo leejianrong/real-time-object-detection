@@ -23,3 +23,5 @@ PTQ: ORT static quantization (QDQ), calibrated on the first 5k images of the fix
 ## Consequences
 
 Pruning changes channel counts, so pruned models need their own ONNX export. QAT export is the main technical risk (see PLAN risks). Fine-tuning data is a subset of train2017 that the pretrained model already saw, which is acceptable for recovery but must be stated in the notebook.
+
+Update 2026-11-03: QAT was built and measured; see ADR-0007 and `docs/RESULTS.md`. It ties tuned PTQ rather than beating it.

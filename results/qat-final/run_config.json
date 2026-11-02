@@ -1,0 +1,28 @@
+{
+  "args": {
+    "cmd": "qat",
+    "steps": 1250,
+    "batch": 16,
+    "lr": 2e-06,
+    "clip": 100.0,
+    "device": "cuda",
+    "subset": "train10k",
+    "seed": 0,
+    "ema": false,
+    "ema_decay": 0.999,
+    "no_fake_quant": false,
+    "workers": 4,
+    "no_ptq": true,
+    "out": "/workspace/runs/qat_lr2e6"
+  },
+  "git_sha": "2fa330912ad32ae38c7ea57f74cdeeed34dbee10",
+  "id_list": {
+    "name": "train10k",
+    "sha256": "d69ade6ebc61f101261de1bae5dbe9a33e23c11c87fb2378824926a6d9b4631c"
+  },
+  "versions": {
+    "python": "3.11.10",
+    "torch": "2.4.1+cu124",
+    "cuda": "12.4"
+  }
+}
