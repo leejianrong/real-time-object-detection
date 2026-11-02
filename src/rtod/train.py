@@ -7,8 +7,10 @@ is the folded float weights run through the PTQ pipeline (docs/spikes/qat-export
 
 from __future__ import annotations
 
+import copy
 import json
 import math
+import random
 import time
 from collections.abc import Sequence
 from pathlib import Path
@@ -54,6 +56,34 @@ def prepare_sample(img: Image, boxes: F32, flip: bool) -> tuple[F32, F32]:
     return blob[0], t
 
 
+def seed_everything(seed: int) -> None:
+    """Seed Python, NumPy and torch (CPU + CUDA). Does not force deterministic CUDA kernels."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+
+class Ema:
+    """YOLOX-style exponential moving average of the parameters.
+
+    The decay ramps up from 0 (`d * (1 - exp(-updates / 2000))`, as in YOLOX's ModelEMA) so it works
+    for a short fine-tune. Buffers (fake-quant ranges) are copied from the live model, not averaged.
+    """
+
+    def __init__(self, model: torch.nn.Module, decay: float = 0.9998) -> None:
+        self.model, self.decay, self.updates = copy.deepcopy(model).eval(), decay, 0
+
+    @torch.no_grad()
+    def update(self, live: torch.nn.Module) -> None:
+        self.updates += 1
+        d = self.decay * (1 - math.exp(-self.updates / 2000))
+        for e, m in zip(self.model.parameters(), live.parameters(), strict=True):
+            e.mul_(d).add_(m.detach(), alpha=1 - d)
+        for e, m in zip(self.model.buffers(), live.buffers(), strict=True):
+            e.copy_(m)
+
+
 class CocoSubset(Dataset[tuple[F32, F32]]):
     def __init__(self, ids: Sequence[int], split: str, train: bool = True) -> None:
         self.ids, self.train = list(ids), train
@@ -65,7 +95,7 @@ class CocoSubset(Dataset[tuple[F32, F32]]):
 
     def __getitem__(self, i: int) -> tuple[F32, F32]:
         img = cv2.imread(str(self.paths[i]))
-        flip = self.train and bool(np.random.random() < 0.5)
+        flip = self.train and bool(torch.rand(()) < 0.5)
         return prepare_sample(np.asarray(img, dtype=np.uint8), self.boxes[self.ids[i]], flip)
 
 
@@ -81,13 +111,28 @@ def qat_finetune(
     device: str = "cpu",
     workers: int = 4,
     metrics_dir: Path | None = None,
+    seed: int = 0,
+    ema: bool = False,
+    fake_quant: bool = True,
 ) -> torch.nn.Module:
-    """Returns the QAT model (fake-quant on) after `steps` optimizer steps."""
+    """Fine-tune and return the model (the EMA weights if `ema`).
+
+    `fake_quant=False` runs the identical recipe as a plain float fine-tune: the control that
+    separates "the recipe hurts the model" from "quantization noise hurts the model".
+    """
     from rtod.models import load_official_weights
 
+    seed_everything(seed)
     model = prepare_qat(load_official_weights())
     ds = CocoSubset(ids, split)
-    loader = DataLoader(ds, batch_size=batch, shuffle=True, num_workers=workers, drop_last=True)
+    loader = DataLoader(
+        ds,
+        batch_size=batch,
+        shuffle=True,
+        num_workers=workers,
+        drop_last=True,
+        generator=torch.Generator().manual_seed(seed),
+    )
 
     model.head.decode_in_inference = False
     model.to(device)
@@ -98,6 +143,9 @@ def qat_finetune(
         if hasattr(m, "w_fq"):
             m.w_fq.enable_observer()
 
+    if not fake_quant:
+        set_fake_quant(model, False)
+    averaged = Ema(model) if ema else None
     model.train()
     writer = MetricsWriter(metrics_dir) if metrics_dir else None
     t0 = time.monotonic()
@@ -112,6 +160,8 @@ def qat_finetune(
             out["total_loss"].backward()
             gnorm = torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
             opt.step()
+            if averaged:
+                averaged.update(model)
             step += 1
             loss = float(out["total_loss"])
             if not math.isfinite(loss):  # fail in seconds, not after the whole run has burned money
@@ -141,7 +191,7 @@ def qat_finetune(
                 break
     if writer:
         writer.close()
-    return model.eval().cpu()
+    return (averaged.model if averaged else model).eval().cpu()
 
 
 def _take(loader: DataLoader[tuple[F32, F32]], n: int) -> list[tuple[torch.Tensor, torch.Tensor]]:
