@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import random
+import time
 import urllib.request
 import zipfile
 from collections.abc import Sequence
@@ -58,12 +59,25 @@ def fetch_images(ids: Sequence[int], split: str = "val", cache: Path = CACHE) ->
 
     def one(i: int) -> Path:
         p = cache / split / f"{i:012d}.jpg"
-        if not p.exists():
-            urllib.request.urlretrieve(IMG_URL.format(split=split, id=i), p)  # noqa: S310
+        for attempt in range(3):
+            if p.exists():
+                break
+            try:
+                urllib.request.urlretrieve(IMG_URL.format(split=split, id=i), p)  # noqa: S310
+            except OSError:
+                if attempt == 2:
+                    raise
+                time.sleep(2**attempt)
         return p
 
+    t0, out = time.monotonic(), []
     with ThreadPoolExecutor(16) as ex:
-        return list(ex.map(one, ids))
+        for n, p in enumerate(ex.map(one, ids), 1):
+            out.append(p)
+            if len(ids) >= 500 and (n % 500 == 0 or n == len(ids)):
+                rate = n / (time.monotonic() - t0)
+                print(f"DATA split={split} fetched={n}/{len(ids)} rate={rate:.1f}/s", flush=True)
+    return out
 
 
 def evaluate(model: Path, ids: Sequence[int] | None = None, split: str = "val") -> dict[str, Any]:

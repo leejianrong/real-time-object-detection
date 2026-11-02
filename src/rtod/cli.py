@@ -11,6 +11,50 @@ from pathlib import Path
 from rtod import bench, coco
 
 
+def _job_qat(args: argparse.Namespace) -> int:
+    import subprocess
+
+    from rtod import jobs
+
+    sha = (
+        args.sha
+        or subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+        ).stdout.strip()
+    )
+    on_main = (
+        subprocess.run(["git", "merge-base", "--is-ancestor", sha, "origin/main"]).returncode == 0
+    )
+    if not on_main:
+        print(f"error: {sha} is not on origin/main; the pod installs from GitHub", file=sys.stderr)
+        return 2
+    raw = f"https://raw.githubusercontent.com/leejianrong/real-time-object-detection/{sha}"
+    cmd = (
+        f"(timeout 120 curl -fsSL {raw}/scripts/job_qat.sh -o /tmp/job.sh "
+        f"&& RTOD_SHA={sha} QAT_STEPS={args.steps} bash /tmp/job.sh) "
+        '|| echo "RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?"'
+    )
+    spec = jobs.JobSpec(
+        name="qat",
+        image="runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+        cmd=cmd,
+        gpu_types="NVIDIA GeForce RTX 4090",
+        max_hourly_usd=0.40,
+        max_hours=1.5,
+    )
+    ledger = jobs.Ledger()
+    print(
+        f"job qat sha={sha[:8]} steps={args.steps} worst case ${spec.worst_case_usd:.2f}; "
+        f"spent ${ledger.spent():.2f} of ${ledger.cap:.2f}"
+    )
+    ledger.check(spec)
+    if args.dry_run:
+        print("dry run: cap check passed, nothing launched")
+        return 0
+    jobs.run_job(jobs.RpProvider(), ledger, spec, args.dest)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="rtod")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -38,7 +82,18 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--subset", choices=["train10k", "val200"], default="train10k")
     t.add_argument("--workers", type=int, default=4)
     t.add_argument("--out", type=Path, default=Path("qat_out"))
+    j = sub.add_parser("job", help="launch a RunPod job under the spend cap")
+    j.add_argument("which", choices=["qat"])
+    j.add_argument("--sha", help="pushed commit to run (default: HEAD)")
+    j.add_argument("--steps", type=int, default=1250)
+    j.add_argument(
+        "--dry-run", action="store_true", help="print the plan and cap check, launch nothing"
+    )
+    j.add_argument("--dest", type=Path, default=Path(".cache/jobs/qat_artifact"))
     args = p.parse_args(argv)
+
+    if args.cmd == "job":
+        return _job_qat(args)
 
     if args.cmd == "qat":
         from rtod.quant import quantize_ptq

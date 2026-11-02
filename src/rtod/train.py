@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import math
+import time
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
@@ -95,6 +96,7 @@ def qat_finetune(
             m.w_fq.enable_observer()
 
     model.train()
+    t0 = time.monotonic()
     opt = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     step = 0
     while step < steps:
@@ -104,11 +106,22 @@ def qat_finetune(
             out: dict[str, Any] = model(x.to(device), y.to(device))
             opt.zero_grad()
             out["total_loss"].backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
+            gnorm = torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
             opt.step()
             step += 1
-            if step in (1, steps) or step % 20 == 0:
-                print(f"step {step}/{steps} loss {out['total_loss'].item():.3f}", flush=True)
+            loss = float(out["total_loss"])
+            if not math.isfinite(loss):  # fail in seconds, not after the whole run has burned money
+                raise FloatingPointError(f"non-finite loss {loss} at step {step}")
+            if step in (1, steps) or step % 10 == 0:
+                rate = step / (time.monotonic() - t0)
+                mem = torch.cuda.max_memory_allocated() // 2**20 if device != "cpu" else 0
+                print(
+                    f"TRAIN step={step}/{steps} loss={loss:.3f} iou={float(out['iou_loss']):.3f} "
+                    f"conf={float(out['conf_loss']):.3f} cls={float(out['cls_loss']):.3f} "
+                    f"lr={opt.param_groups[0]['lr']:.2e} gnorm={float(gnorm):.2f} it_s={rate:.2f} "
+                    f"eta_s={(steps - step) / rate:.0f} gpu_mem_mb={mem}",
+                    flush=True,
+                )
             if step >= steps:
                 break
     return model.eval().cpu()
