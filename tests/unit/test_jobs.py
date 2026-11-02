@@ -2,7 +2,16 @@ from pathlib import Path
 
 import pytest
 
-from rtod.jobs import CapExceeded, JobSpec, Ledger, LogMonitor, RpProvider, bootstrap_cmd, run_job
+from rtod.jobs import (
+    NO_STOCK,
+    CapExceeded,
+    JobSpec,
+    Ledger,
+    LogMonitor,
+    RpProvider,
+    bootstrap_cmd,
+    run_job,
+)
 
 SPEC = JobSpec(
     "qat", "img:tag", "python train.py", (("COMMUNITY", "A"), ("SECURE", "B,C")), 0.34, 2.0
@@ -164,3 +173,18 @@ def test_every_published_artifact_is_fetched_in_order(tmp_path):
 def test_done_marker_is_reported_and_is_not_an_error():
     mon = LogMonitor(start=0)
     assert ("done", "RTOD t+0900s RTOD_DONE") in feed(mon, 5, "RTOD t+0900s RTOD_DONE")
+
+
+@pytest.mark.parametrize(
+    "msg",
+    [
+        "create pod: There are no instances currently available",
+        "create pod: There are no longer any instances available with the requested specs.",
+    ],
+)
+def test_both_runpod_stock_wordings_are_retried(msg):
+    assert NO_STOCK.search(msg)
+
+
+def test_other_create_errors_are_not_mistaken_for_stock():
+    assert not NO_STOCK.search("create pod: invalid field gpuTypeIds")
