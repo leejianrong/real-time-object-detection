@@ -26,7 +26,7 @@ df -h $W | tail -1 ; python3 --version
 
 phase install "sha=$RTOD_SHA"
 if [ -z "${RTOD_SKIP_INSTALL:-}" ]; then
-  pip install -q "rtod[torch,onnx,coco] @ git+https://github.com/leejianrong/real-time-object-detection@${RTOD_SHA}" 2>&1 | tee "$LOGS/install.log"
+  pip install -q "rtod[torch,onnx,coco,plot] @ git+https://github.com/leejianrong/real-time-object-detection@${RTOD_SHA}" 2>&1 | tee "$LOGS/install.log"
 fi
 
 phase preflight
@@ -53,6 +53,7 @@ for m in folded int8 ; do
   say "eval $m: $(cat "$OUT/eval_$m.json")"
 done
 cp "$LOGS"/*.log "$OUT"/
+rtod plot "$OUT/metrics.jsonl" "$OUT/training.png" || say "plot failed (non-fatal)"
 
 phase send
 tar -C $W -czf $W/qat_out.tgz qat_out
