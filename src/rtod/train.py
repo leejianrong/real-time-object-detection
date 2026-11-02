@@ -65,21 +65,21 @@ def seed_everything(seed: int) -> None:
 
 
 class Ema:
-    """YOLOX-style exponential moving average of the parameters.
+    """Exponential moving average of the parameters, started from the pretrained weights.
 
-    The decay ramps up from 0 (`d * (1 - exp(-updates / 2000))`, as in YOLOX's ModelEMA) so it works
-    for a short fine-tune. Buffers (fake-quant ranges) are copied from the live model, not averaged.
+    Fixed decay, no warm-up ramp: YOLOX's `d * (1 - exp(-updates / 2000))` ramp is for training from
+    scratch, and over a 1250-step fine-tune it only reaches ~0.46, which makes the average almost
+    identical to the raw weights (the first sweep's `float_ema` config accidentally tested that).
+    Buffers (fake-quant ranges) are copied from the live model, not averaged.
     """
 
-    def __init__(self, model: torch.nn.Module, decay: float = 0.9998) -> None:
-        self.model, self.decay, self.updates = copy.deepcopy(model).eval(), decay, 0
+    def __init__(self, model: torch.nn.Module, decay: float = 0.999) -> None:
+        self.model, self.decay = copy.deepcopy(model).eval(), decay
 
     @torch.no_grad()
     def update(self, live: torch.nn.Module) -> None:
-        self.updates += 1
-        d = self.decay * (1 - math.exp(-self.updates / 2000))
         for e, m in zip(self.model.parameters(), live.parameters(), strict=True):
-            e.mul_(d).add_(m.detach(), alpha=1 - d)
+            e.mul_(self.decay).add_(m.detach(), alpha=1 - self.decay)
         for e, m in zip(self.model.buffers(), live.buffers(), strict=True):
             e.copy_(m)
 
@@ -113,6 +113,7 @@ def qat_finetune(
     metrics_dir: Path | None = None,
     seed: int = 0,
     ema: bool = False,
+    ema_decay: float = 0.999,
     fake_quant: bool = True,
 ) -> torch.nn.Module:
     """Fine-tune and return the model (the EMA weights if `ema`).
@@ -145,7 +146,7 @@ def qat_finetune(
 
     if not fake_quant:
         set_fake_quant(model, False)
-    averaged = Ema(model) if ema else None
+    averaged = Ema(model, ema_decay) if ema else None
     model.train()
     writer = MetricsWriter(metrics_dir) if metrics_dir else None
     t0 = time.monotonic()
