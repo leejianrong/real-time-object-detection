@@ -62,10 +62,113 @@ class Ledger:
         self.path.write_text(json.dumps([*self.entries(), entry], indent=2) + "\n")
 
 
+class JobFailed(RuntimeError):
+    pass
+
+
+@dataclass(frozen=True)
+class Event:
+    level: str  # info | warn | fatal | artifact
+    msg: str
+
+
+FATAL_MARKERS = (
+    "RTOD_FAIL",
+    "RTOD_FATAL",
+    "Traceback (most recent call last)",
+    "CUDA out of memory",
+    "non-finite loss",
+    "No space left on device",
+)
+# Per-phase budgets in seconds: an overrun is a warning (the lifetime cap is the hard stop).
+PHASE_BUDGET = {"install": 600, "preflight": 120, "smoke": 600, "train": 2700, "eval": 1800}
+
+
+class LogMonitor:
+    """Decides, from pod log lines alone, whether a job is healthy. No I/O, so it is unit-tested.
+
+    Feed it every poll (an empty list is a pure time check). It reports phase changes and training
+    progress, warns when a phase overruns its budget or output is slow to start, and goes fatal on
+    an error marker, a lost heartbeat, or no output at all.
+    """
+
+    def __init__(
+        self, start: float, boot_warn: float = 180, boot_fatal: float = 420, hb_stall: float = 180
+    ) -> None:
+        self.start, self.boot_warn, self.boot_fatal, self.hb_stall = (
+            start,
+            boot_warn,
+            boot_fatal,
+            hb_stall,
+        )
+        self.first_output: float | None = None
+        self.last_hb: float | None = None
+        self.phase, self.phase_since = "none", start
+        self._seen: set[str] = set()
+        self._warned: set[str] = set()
+
+    def feed(self, lines: list[str], now: float) -> list[Event]:
+        out: list[Event] = []
+        for line in lines:
+            if line in self._seen:
+                continue
+            self._seen.add(line)
+            if self.first_output is None:
+                self.first_output = now
+            if "RTOD_HB" in line:
+                self.last_hb = now
+            if " phase=" in line and line.startswith("RTOD t+"):
+                self.phase, self.phase_since = line.split("phase=")[1].split()[0], now
+                out.append(Event("info", line))
+            elif line.startswith(("TRAIN ", "DATA ")) or "RTOD_ARTIFACT" in line:
+                out.append(Event("info", line))
+            if any(m in line for m in FATAL_MARKERS):
+                out.append(Event("fatal", line))
+            if "RP_ARTIFACT_CODE=" in line and line.split("=")[-1].strip():
+                out.append(Event("artifact", line.split("=")[-1].strip()))
+        out += self._time_checks(now)
+        return out
+
+    def _warn_once(self, key: str, msg: str) -> list[Event]:
+        if key in self._warned:
+            return []
+        self._warned.add(key)
+        return [Event("warn", msg)]
+
+    def _time_checks(self, now: float) -> list[Event]:
+        if self.first_output is None:
+            waited = now - self.start
+            if waited > self.boot_fatal:
+                return [
+                    Event(
+                        "fatal",
+                        f"no output from the pod after {waited:.0f}s (image pull or start failed?)",
+                    )
+                ]
+            if waited > self.boot_warn:
+                return self._warn_once(
+                    "boot", f"no output yet after {waited:.0f}s; check system logs"
+                )
+            return []
+        out: list[Event] = []
+        if self.last_hb is not None and now - self.last_hb > self.hb_stall:
+            out.append(
+                Event(
+                    "fatal", f"heartbeat lost for {now - self.last_hb:.0f}s in phase {self.phase}"
+                )
+            )
+        budget = PHASE_BUDGET.get(self.phase)
+        if budget and now - self.phase_since > budget:
+            out += self._warn_once(
+                f"budget-{self.phase}", f"phase {self.phase} over its {budget}s budget"
+            )
+        return out
+
+
 class Provider(Protocol):
     def up(self, spec: JobSpec) -> None: ...
-    def follow(self) -> None: ...
-    def fetch(self, dest: Path) -> None: ...
+    def follow(self) -> str: ...
+    def fetch(self, code: str, dest: Path) -> None: ...
     def down(self) -> None: ...
     def active(self) -> bool: ...
 
@@ -76,8 +179,7 @@ def run_job(provider: Provider, ledger: Ledger, spec: JobSpec, dest: Path) -> No
     start = time.monotonic()
     try:
         provider.up(spec)
-        provider.follow()
-        provider.fetch(dest)
+        provider.fetch(provider.follow(), dest)
     finally:
         provider.down()
         ledger.record(spec, min((time.monotonic() - start) / 3600, spec.max_hours))
@@ -99,24 +201,91 @@ class RpProvider:
             "RP_POD_IMAGE": spec.image,
             "RP_JOB_CMD": spec.cmd,
             "RP_COMPUTE_TYPE": "GPU",
+            "RP_CLOUD_TYPE": "COMMUNITY",
+            "RP_INTERRUPTIBLE": "false",  # spot pods are no longer offered (runpod-jobs skill)
+            "RP_CONTAINER_DISK_GB": "40",
+            "RP_MIN_RAM_GB": "16",
             "RP_GPU_TYPE": spec.gpu_types,
             "RP_MAX_HOURLY_USD": str(spec.max_hourly_usd),
             "RP_MAX_LIFETIME_SECS": str(int(spec.max_hours * 3600)),
         }
 
-    def _rp(self, *args: str, spec: JobSpec | None = None) -> None:
+    def _rp(self, *args: str, spec: JobSpec | None = None) -> str:
         env = self.env(spec) if spec else None
-        subprocess.run([self.rp, *args], check=True, env=env)
+        done = subprocess.run([self.rp, *args], check=True, env=env, capture_output=True, text=True)
+        return done.stdout.strip()
 
     def up(self, spec: JobSpec) -> None:
         self._spec = spec
-        self._rp("up", spec=spec)
+        self.pod_id = self._rp("up", spec=spec).splitlines()[-1]
+        print(f"[job] pod {self.pod_id} created", flush=True)
 
-    def follow(self) -> None:
-        self._rp("logs", "-f", spec=self._spec)
+    def _logs(self, source: str) -> list[str]:
+        done = subprocess.run(
+            [
+                "runpodctl",
+                "pod",
+                "logs",
+                self.pod_id,
+                "--source",
+                source,
+                "--tail",
+                "3000",
+                "--max-wait",
+                "5s",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+        lines = []
+        for raw in done.stdout.splitlines():
+            try:
+                rec = json.loads(raw)
+            except ValueError:
+                lines.append(raw)
+                continue
+            if "error" in rec:
+                if rec.get("code") == "not_found":
+                    raise JobFailed("pod is gone before the job finished")
+                continue
+            lines.append(str(rec.get("line", "")))
+        return lines
 
-    def fetch(self, dest: Path) -> None:
-        self._rp("relay-get", str(dest), spec=self._spec)
+    def follow(self, poll: float = 15, snapshot: Path | None = None) -> str:
+        """Poll pod logs, show progress, persist the raw log, and return the artifact code.
+
+        Raises JobFailed the moment the monitor sees a fatal condition.
+        """
+        snapshot = snapshot or Path(".cache/jobs") / f"{self._spec.name}.pod.log"
+        snapshot.parent.mkdir(parents=True, exist_ok=True)
+        mon, shown = LogMonitor(time.monotonic()), set[str]()
+        limit = time.monotonic() + self._spec.max_hours * 3600
+        while time.monotonic() < limit:
+            try:
+                lines = self._logs("container")
+            except subprocess.TimeoutExpired:
+                lines = []
+            new = [x for x in lines if x not in shown]
+            shown.update(new)
+            if new:
+                with snapshot.open("a") as f:
+                    f.write("\n".join(new) + "\n")
+            for ev in mon.feed(lines, time.monotonic()):
+                print(f"[job:{ev.level}] {ev.msg}", flush=True)
+                if ev.level == "warn" and "system logs" in ev.msg:
+                    print("\n".join(self._logs("system")[-15:]), flush=True)
+                if ev.level == "fatal":
+                    print("\n".join(lines[-40:]), flush=True)
+                    raise JobFailed(ev.msg)
+                if ev.level == "artifact":
+                    return ev.msg
+            time.sleep(poll)
+        raise JobFailed("lifetime reached without an artifact")
+
+    def fetch(self, code: str, dest: Path) -> None:
+        dest.mkdir(parents=True, exist_ok=True)
+        subprocess.run(["runpodctl", "receive", code], cwd=dest, check=True, timeout=900)
 
     def down(self) -> None:
         subprocess.run([self.rp, "down"], check=False, env=self.env(self._spec))
