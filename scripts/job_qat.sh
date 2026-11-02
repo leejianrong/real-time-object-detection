@@ -54,8 +54,8 @@ publish() {  # publish() <code-base> <tarball>: the sender must stay up until th
 
 # Stage 1: the trained model and its metrics. Shipped before anything optional so a later
 # failure or timeout cannot lose the training run.
-phase train "steps=$QAT_STEPS"
-rtod qat --subset train10k --steps "$QAT_STEPS" --device cuda --no-ptq --out "$OUT" 2>&1 | tee "$LOGS/train.log"
+phase train "steps=$QAT_STEPS lr=${QAT_LR:-2e-4} clip=${QAT_CLIP:-10}"
+rtod qat --subset train10k --steps "$QAT_STEPS" --lr "${QAT_LR:-2e-4}" --clip "${QAT_CLIP:-10}" --device cuda --no-ptq --out "$OUT" 2>&1 | tee "$LOGS/train.log"
 test -s "$OUT/yolox_tiny_qat_folded.onnx"
 rtod plot "$OUT/metrics.jsonl" "$OUT/training.png" || say "plot failed (non-fatal)"
 phase send "stage 1: folded model + metrics"

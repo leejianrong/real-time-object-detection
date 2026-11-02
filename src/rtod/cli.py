@@ -31,7 +31,7 @@ def _job_qat(args: argparse.Namespace) -> int:
     spec = jobs.JobSpec(
         name="qat",
         image="runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
-        cmd=jobs.bootstrap_cmd(sha, args.steps),
+        cmd=jobs.bootstrap_cmd(sha, args.steps, args.lr, args.clip),
         offers=(
             ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
             ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),
@@ -75,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
     t = sub.add_parser("qat", help="QAT fine-tune, export folded float, PTQ it (the pod job)")
     t.add_argument("--steps", type=int, default=1250)
     t.add_argument("--batch", type=int, default=16)
+    t.add_argument("--lr", type=float, default=2e-4)
+    t.add_argument("--clip", type=float, default=10.0, help="grad-norm clip threshold")
     t.add_argument("--device", default="cpu")
     t.add_argument("--subset", choices=["train10k", "val200"], default="train10k")
     t.add_argument("--workers", type=int, default=4)
@@ -84,6 +86,8 @@ def main(argv: list[str] | None = None) -> int:
     j.add_argument("which", choices=["qat"])
     j.add_argument("--sha", help="pushed commit to run (default: HEAD)")
     j.add_argument("--steps", type=int, default=1250)
+    j.add_argument("--lr", type=float, default=2e-4)
+    j.add_argument("--clip", type=float, default=10.0)
     j.add_argument(
         "--dry-run", action="store_true", help="print the plan and cap check, launch nothing"
     )
@@ -118,10 +122,15 @@ def main(argv: list[str] | None = None) -> int:
             split,
             steps=args.steps,
             batch=args.batch,
+            lr=args.lr,
+            clip=args.clip,
             device=args.device,
             workers=args.workers,
             metrics_dir=args.out,
         )
+        import torch
+
+        torch.save(model.state_dict(), args.out / "qat_model.pt")  # incl. observer ranges (path A)
         folded = export_folded(model, args.out / "yolox_tiny_qat_folded.onnx")
         if args.no_ptq:
             print(folded)
