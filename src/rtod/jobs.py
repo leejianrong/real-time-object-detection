@@ -11,6 +11,7 @@ import json
 import os
 import subprocess
 import time
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -89,7 +90,7 @@ class JobFailed(RuntimeError):
 
 @dataclass(frozen=True)
 class Event:
-    level: str  # info | warn | fatal | artifact
+    level: str  # info | warn | fatal | artifact | done
     msg: str
 
 
@@ -102,7 +103,15 @@ FATAL_MARKERS = (
     "No space left on device",
 )
 # Per-phase budgets in seconds: an overrun is a warning (the lifetime cap is the hard stop).
-PHASE_BUDGET = {"install": 600, "preflight": 120, "smoke": 600, "train": 2700, "eval": 1800}
+PHASE_BUDGET = {
+    "install": 600,
+    "preflight": 120,
+    "smoke": 600,
+    "train": 2700,
+    "send": 600,
+    "ptq": 1800,
+    "eval": 1800,
+}
 
 
 class LogMonitor:
@@ -143,6 +152,8 @@ class LogMonitor:
                 out.append(Event("info", line))
             elif line.startswith(("TRAIN ", "DATA ")) or "RTOD_ARTIFACT" in line:
                 out.append(Event("info", line))
+            if "RTOD_DONE" in line:
+                out.append(Event("done", line))
             if any(m in line for m in FATAL_MARKERS):
                 out.append(Event("fatal", line))
             if "RP_ARTIFACT_CODE=" in line and line.split("=")[-1].strip():
@@ -188,7 +199,7 @@ class LogMonitor:
 
 class Provider(Protocol):
     def up(self, spec: JobSpec) -> None: ...
-    def follow(self) -> str: ...
+    def follow(self) -> Iterator[str]: ...
     def fetch(self, code: str, dest: Path) -> None: ...
     def down(self) -> None: ...
     def active(self) -> bool: ...
@@ -200,7 +211,8 @@ def run_job(provider: Provider, ledger: Ledger, spec: JobSpec, dest: Path) -> No
     start = time.monotonic()
     try:
         provider.up(spec)
-        provider.fetch(provider.follow(), dest)
+        for n, code in enumerate(provider.follow(), 1):  # the job may publish several artifacts
+            provider.fetch(code, dest / f"artifact{n}")
     finally:
         provider.down()
         ledger.record(spec, min((time.monotonic() - start) / 3600, spec.max_hours))
@@ -299,10 +311,11 @@ class RpProvider:
         )
         return self.pod_id in out.stdout
 
-    def follow(self, poll: float = 15, snapshot: Path | None = None) -> str:
-        """Poll pod logs, show progress, persist the raw log, and return the artifact code.
+    def follow(self, poll: float = 15, snapshot: Path | None = None) -> Iterator[str]:
+        """Poll pod logs, show progress, persist the raw log, and yield each artifact code.
 
-        Raises JobFailed the moment the monitor sees a fatal condition.
+        The caller fetches a code before asking for the next, while the job waits for the transfer.
+        Returns when the job reports RTOD_DONE; raises JobFailed on any fatal condition.
         """
         snapshot = snapshot or Path(".cache/jobs") / f"{self._spec.name}.pod.log"
         snapshot.parent.mkdir(parents=True, exist_ok=True)
@@ -326,14 +339,16 @@ class RpProvider:
                     print("\n".join(lines[-40:]), flush=True)
                     raise JobFailed(ev.msg)
                 if ev.level == "artifact":
-                    return ev.msg
+                    yield ev.msg
+                if ev.level == "done":
+                    return
             if not self._pod_exists():
                 print("\n".join(lines[-40:]), flush=True)
                 raise JobFailed(
-                    "pod no longer exists (self-terminated or reclaimed) before the artifact"
+                    "pod no longer exists (self-terminated or reclaimed) before RTOD_DONE"
                 )
             time.sleep(poll)
-        raise JobFailed("lifetime reached without an artifact")
+        raise JobFailed("lifetime reached before the job reported RTOD_DONE")
 
     def fetch(self, code: str, dest: Path) -> None:
         dest.mkdir(parents=True, exist_ok=True)

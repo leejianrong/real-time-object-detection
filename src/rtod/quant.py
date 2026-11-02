@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -15,11 +16,16 @@ class _Reader:
     def __init__(self, paths: Sequence[Path], input_name: str) -> None:
         self._it = iter(paths)
         self._name = input_name
+        self._n, self._total, self._t0 = 0, len(paths), time.monotonic()
 
     def get_next(self) -> dict[str, F32] | None:
         path = next(self._it, None)
         if path is None:
             return None
+        self._n += 1
+        if self._n % 250 == 0 or self._n == self._total:
+            rate = self._n / (time.monotonic() - self._t0)
+            print(f"CALIB {self._n}/{self._total} rate={rate:.2f}/s", flush=True)
         img = cv2.imread(str(path))
         if img is None:
             raise ValueError(f"unreadable image {path}")

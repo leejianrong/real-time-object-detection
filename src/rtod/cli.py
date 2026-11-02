@@ -78,6 +78,7 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--device", default="cpu")
     t.add_argument("--subset", choices=["train10k", "val200"], default="train10k")
     t.add_argument("--workers", type=int, default=4)
+    t.add_argument("--no-ptq", action="store_true", help="stop after exporting the folded model")
     t.add_argument("--out", type=Path, default=Path("qat_out"))
     j = sub.add_parser("job", help="launch a RunPod job under the spend cap")
     j.add_argument("which", choices=["qat"])
@@ -122,6 +123,9 @@ def main(argv: list[str] | None = None) -> int:
             metrics_dir=args.out,
         )
         folded = export_folded(model, args.out / "yolox_tiny_qat_folded.onnx")
+        if args.no_ptq:
+            print(folded)
+            return 0
         calib_imgs = coco.fetch_images(ids[:5000], split)
         print(quantize_ptq(folded, args.out / "yolox_tiny_qat_int8.onnx", calib_imgs))
         return 0

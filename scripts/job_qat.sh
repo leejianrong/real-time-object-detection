@@ -43,24 +43,39 @@ phase smoke "3 steps on 16 val images; a failure here costs minutes, not the who
 rtod qat --subset val200 --steps 3 --batch 4 --workers 2 --device cuda --out "$W/smoke" 2>&1 | tee "$LOGS/smoke.log"
 test -s "$W/smoke/yolox_tiny_qat_int8.onnx"
 
+publish() {  # publish() <code-base> <tarball>: the sender must stay up until the driver has received it
+  runpodctl send --code "$1" "$2" > "$LOGS/send_$1.log" 2>&1 &
+  local pid=$! code=""
+  for _ in $(seq 30) ; do code=$(grep -oE "$1[-0-9]+" "$LOGS/send_$1.log" | head -1 || true) ; [ -n "$code" ] && break ; sleep 1 ; done
+  say "RTOD_ARTIFACT $2 sha256=$(sha256sum "$2" | cut -d' ' -f1) bytes=$(stat -c %s "$2")"
+  say "RP_ARTIFACT_CODE=$code"
+  wait $pid
+}
+
+# Stage 1: the trained model and its metrics. Shipped before anything optional so a later
+# failure or timeout cannot lose the training run.
 phase train "steps=$QAT_STEPS"
-rtod qat --subset train10k --steps "$QAT_STEPS" --device cuda --out "$OUT" 2>&1 | tee "$LOGS/train.log"
+rtod qat --subset train10k --steps "$QAT_STEPS" --device cuda --no-ptq --out "$OUT" 2>&1 | tee "$LOGS/train.log"
+test -s "$OUT/yolox_tiny_qat_folded.onnx"
+rtod plot "$OUT/metrics.jsonl" "$OUT/training.png" || say "plot failed (non-fatal)"
+phase send "stage 1: folded model + metrics"
+cp "$LOGS"/*.log "$OUT"/ 2>/dev/null || true
+tar -C $W -czf $W/qat_model.tgz qat_out
+publish rtodqat1 $W/qat_model.tgz
+
+# Stage 2 (best effort, with progress): INT8 model and full-val2017 mAP.
+phase ptq "calibration images=${QAT_CALIB:-5000}"
+rtod quantize "$OUT/yolox_tiny_qat_folded.onnx" "$OUT/yolox_tiny_qat_int8.onnx" --calib "${QAT_CALIB:-5000}" 2>&1 | tee "$LOGS/ptq.log"
 test -s "$OUT/yolox_tiny_qat_int8.onnx"
 
-phase eval "full val2017 mAP for the folded float and INT8 models, on the pod CPU"
+phase eval "full val2017 mAP, folded float and INT8, on the pod CPU (best effort, 20 min each)"
 for m in folded int8 ; do
-  rtod eval "$OUT/yolox_tiny_qat_$m.onnx" --json 2>&1 | tee "$LOGS/eval_$m.log" | grep -E '^\{' > "$OUT/eval_$m.json"
-  say "eval $m: $(cat "$OUT/eval_$m.json")"
+  timeout 1200 rtod eval "$OUT/yolox_tiny_qat_$m.onnx" --json 2>&1 | tee "$LOGS/eval_$m.log" | grep -E '^\{' > "$OUT/eval_$m.json" \
+    && say "eval $m: $(cat "$OUT/eval_$m.json")" || say "eval $m did not finish (non-fatal)"
 done
-cp "$LOGS"/*.log "$OUT"/
-rtod plot "$OUT/metrics.jsonl" "$OUT/training.png" || say "plot failed (non-fatal)"
 
-phase send
-tar -C $W -czf $W/qat_out.tgz qat_out
-say "RTOD_ARTIFACT sha256=$(sha256sum $W/qat_out.tgz | cut -d' ' -f1) bytes=$(stat -c %s $W/qat_out.tgz)"
-runpodctl send --code rtodqat $W/qat_out.tgz > $LOGS/send.log 2>&1 &
-SEND=$!
-for _ in $(seq 30) ; do code=$(grep -oE 'rtodqat[-0-9]+' $LOGS/send.log | head -1 || true) ; [ -n "$code" ] && break ; sleep 1 ; done
-say "RP_ARTIFACT_CODE=$code"
-wait $SEND   # the sender must stay up until the driver has received the file
+phase send "stage 2: INT8 model + eval"
+mkdir -p $W/stage2 && cp "$OUT"/yolox_tiny_qat_int8.onnx "$OUT"/eval_*.json "$LOGS"/ptq.log "$LOGS"/eval_*.log $W/stage2/ 2>/dev/null || true
+tar -C $W -czf $W/qat_int8.tgz stage2
+publish rtodqat2 $W/qat_int8.tgz
 phase done ; say "RTOD_DONE"
