@@ -71,9 +71,28 @@ NO_STOCK = re.compile(r"no (longer any )?instances (currently )?available", re.I
 RAW = "https://raw.githubusercontent.com/leejianrong/real-time-object-detection"
 
 
-def bootstrap_cmd(
-    sha: str, steps: int, lr: float = 2e-4, clip: float = 10.0, base: str | None = None
-) -> str:
+# One-factor-at-a-time ablations for the QAT recipe: every config shares seed, lr, clip and
+# steps and changes one thing relative to its neighbour. The 40k run is last so its extra
+# images are fetched only after the cheaper configs have already produced results.
+SWEEP = {
+    "float": "--no-fake-quant",
+    "float_ema": "--no-fake-quant --ema",
+    "qat": "",
+    "qat_ema": "--ema",
+    "qat_ema_40k": "--ema --subset train40k",
+}
+
+
+def job_env(
+    steps: int, lr: float, clip: float, configs: dict[str, str] | None = None
+) -> dict[str, str]:
+    env = {"QAT_STEPS": str(steps), "QAT_LR": str(lr), "QAT_CLIP": str(clip)}
+    if configs:  # "name:flags,name:flags": no pipes or semicolons, which the shell would eat
+        env["QAT_CONFIGS"] = ",".join(f"{n}:{f}" for n, f in configs.items())
+    return env
+
+
+def bootstrap_cmd(sha: str, env: dict[str, str], base: str | None = None) -> str:
     """The pod's job command: fetch the pinned script (after rp's watchdog is armed) and run it.
 
     It must stay ONE simple command. rp runs it as `( ${JOB_CMD} 2>&1 | tee LOG )`, so a bare
@@ -81,9 +100,10 @@ def bootstrap_cmd(
     idle watchdog would kill a healthy pod after 900 s of apparent silence (seen on the first run).
     """
     base = base or f"{RAW}/{sha}"
+    assigns = " ".join(f'{k}="{v}"' for k, v in {"RTOD_SHA": sha, **env}.items())
     inner = (
         f"(timeout 120 curl -fsSL {base}/scripts/job_qat.sh -o /tmp/job.sh "
-        f"&& RTOD_SHA={sha} QAT_STEPS={steps} QAT_LR={lr} QAT_CLIP={clip} bash /tmp/job.sh) "
+        f"&& {assigns} bash /tmp/job.sh) "
         '|| echo "RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?"'
     )
     return f"bash -c '{inner}'"

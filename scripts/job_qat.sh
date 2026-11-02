@@ -52,34 +52,22 @@ publish() {  # publish() <code-base> <tarball>: the sender must stay up until th
   wait $pid
 }
 
-# Stage 1: the trained model and its metrics. Shipped before anything optional so a later
-# failure or timeout cannot lose the training run.
-phase train "steps=$QAT_STEPS lr=${QAT_LR:-2e-4} clip=${QAT_CLIP:-10}"
-rtod qat --subset train10k --steps "$QAT_STEPS" --lr "${QAT_LR:-2e-4}" --clip "${QAT_CLIP:-10}" --device cuda --no-ptq --out "$OUT" 2>&1 | tee "$LOGS/train.log"
-test -s "$OUT/yolox_tiny_qat_folded.onnx"
-rtod plot "$OUT/metrics.jsonl" "$OUT/training.png" || say "plot failed (non-fatal)"
-phase send "stage 1: folded model + metrics"
-cp "$LOGS"/*.log "$OUT"/ 2>/dev/null || true
-tar -C $W -czf $W/qat_model.tgz qat_out
-publish rtodqat1 $W/qat_model.tgz
-
-# Stage 2 is opt-in. The pod's CPU is ~10x slower than a laptop for ORT calibration and eval (run 3: 40 min
-# for calibration, then the first eval did not finish before the lifetime cap), so by default PTQ and
-# evaluation run locally on the downloaded stage-1 model.
-if [ "${QAT_STAGE2:-0}" != 1 ] ; then phase done ; say "RTOD_DONE" ; exit 0 ; fi
-# Stage 2 (best effort, with progress): INT8 model and full-val2017 mAP.
-phase ptq "calibration images=${QAT_CALIB:-5000}"
-rtod quantize "$OUT/yolox_tiny_qat_folded.onnx" "$OUT/yolox_tiny_qat_int8.onnx" --calib "${QAT_CALIB:-5000}" 2>&1 | tee "$LOGS/ptq.log"
-test -s "$OUT/yolox_tiny_qat_int8.onnx"
-
-phase eval "full val2017 mAP, folded float and INT8, on the pod CPU (best effort, 20 min each)"
-for m in folded int8 ; do
-  timeout 1200 rtod eval "$OUT/yolox_tiny_qat_$m.onnx" --json 2>&1 | tee "$LOGS/eval_$m.log" | grep -E '^\{' > "$OUT/eval_$m.json" \
-    && say "eval $m: $(cat "$OUT/eval_$m.json")" || say "eval $m did not finish (non-fatal)"
+# One config per artifact, published as soon as it finishes so a later failure cannot lose it.
+# QAT_CONFIGS is "name:flags,name:flags"; unset means a single config built from QAT_LR/QAT_CLIP.
+CONFIGS="${QAT_CONFIGS:-run:}"
+n=0
+for cfg in $(echo "$CONFIGS" | tr ',' '\n' | tr ' ' '\001') ; do
+  cfg=$(echo "$cfg" | tr '\001' ' ') ; name="${cfg%%:*}" ; flags="${cfg#*:}" ; n=$((n+1))
+  OUT=$W/runs/$name ; mkdir -p "$OUT"
+  phase train "config=$name flags='$flags' steps=$QAT_STEPS lr=${QAT_LR:-2e-4} clip=${QAT_CLIP:-10}"
+  # shellcheck disable=SC2086  (flags are intentionally word-split)
+  rtod qat --subset train10k --steps "$QAT_STEPS" --lr "${QAT_LR:-2e-4}" --clip "${QAT_CLIP:-10}" \
+    --seed 0 $flags --device cuda --no-ptq --out "$OUT" 2>&1 | tee "$LOGS/train_$name.log"
+  test -s "$OUT/yolox_tiny_qat_folded.onnx"
+  rtod plot "$OUT/metrics.jsonl" "$OUT/training.png" || say "plot failed (non-fatal)"
+  cp "$LOGS/train_$name.log" "$OUT/"
+  phase send "config=$name -> artifact $n"
+  tar -C "$W/runs" -czf "$W/qat_$name.tgz" "$name"
+  publish "rtodqat$n" "$W/qat_$name.tgz"
 done
-
-phase send "stage 2: INT8 model + eval"
-mkdir -p $W/stage2 && cp "$OUT"/yolox_tiny_qat_int8.onnx "$OUT"/eval_*.json "$LOGS"/ptq.log "$LOGS"/eval_*.log $W/stage2/ 2>/dev/null || true
-tar -C $W -czf $W/qat_int8.tgz stage2
-publish rtodqat2 $W/qat_int8.tgz
 phase done ; say "RTOD_DONE"

@@ -4,12 +4,14 @@ import pytest
 
 from rtod.jobs import (
     NO_STOCK,
+    SWEEP,
     CapExceeded,
     JobSpec,
     Ledger,
     LogMonitor,
     RpProvider,
     bootstrap_cmd,
+    job_env,
     run_job,
 )
 
@@ -148,8 +150,8 @@ def test_bootstrap_output_reaches_rps_log_through_its_exact_wrapper(tmp_path):
 
     (tmp_path / "scripts").mkdir()
     (tmp_path / "scripts/job_qat.sh").write_text("echo JOB_OUTPUT_$RTOD_SHA\n")
-    cmd = bootstrap_cmd("abc123", 5, base=f"file://{tmp_path}")
-    assert "QAT_LR=0.0002" in cmd and "QAT_CLIP=10.0" in cmd
+    cmd = bootstrap_cmd("abc123", job_env(5, 2e-4, 10.0), base=f"file://{tmp_path}")
+    assert 'QAT_LR="0.0002"' in cmd
     log = tmp_path / "rp-job.log"
     # the same shape as rp's launch_command: ( ${JOB_CMD} 2>&1 | tee "$LOG" )
     subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
@@ -159,7 +161,7 @@ def test_bootstrap_output_reaches_rps_log_through_its_exact_wrapper(tmp_path):
 def test_bootstrap_failure_is_reported_in_the_log_too(tmp_path):
     import subprocess
 
-    cmd = bootstrap_cmd("abc123", 5, base=f"file://{tmp_path}/missing")
+    cmd = bootstrap_cmd("abc123", job_env(5, 2e-4, 10.0), base=f"file://{tmp_path}/missing")
     log = tmp_path / "rp-job.log"
     subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
     assert "RTOD_FATAL phase=bootstrap" in log.read_text()
@@ -189,3 +191,23 @@ def test_both_runpod_stock_wordings_are_retried(msg):
 
 def test_other_create_errors_are_not_mistaken_for_stock():
     assert not NO_STOCK.search("create pod: invalid field gpuTypeIds")
+
+
+def test_sweep_configs_reach_the_script_intact_through_rps_wrapper(tmp_path):
+    """The config list carries spaces, dashes and colons; none may be eaten by the shell layers."""
+    import subprocess
+
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts/job_qat.sh").write_text('echo "GOT:$QAT_CONFIGS"\n')
+    cmd = bootstrap_cmd("abc", job_env(5, 5e-5, 100.0, SWEEP), base=f"file://{tmp_path}")
+    log = tmp_path / "log"
+    subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
+    got = log.read_text().split("GOT:")[1].strip()
+    assert got.split(",") == [f"{n}:{f}" for n, f in SWEEP.items()]
+
+
+def test_each_sweep_config_differs_from_the_previous_in_one_factor():
+    flags = [set(f.split()) for f in SWEEP.values()]
+    # qat_ema_40k adds a data flag pair on top of qat_ema; the rest add or drop one flag
+    assert flags[2] == set() and flags[3] == {"--ema"}
+    assert flags[4] == {"--ema", "--subset", "train40k"}
