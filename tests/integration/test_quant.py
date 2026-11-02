@@ -36,3 +36,21 @@ def test_ptq_is_smaller_and_scores_survive(fp32, tmp_path):
     blob = np.full((1, 3, INPUT_SIZE, INPUT_SIZE), 114, dtype=np.float32)
     # regression: a shared INT8 output scale once rounded every objectness/class score to 0
     assert OrtDetector(ptq).run_raw(blob)[:, 4:].max() > 0
+
+
+def test_conv_only_quantizes_fewer_tensors_than_full_coverage(fp32, tmp_path):
+    import onnx
+
+    rng = np.random.default_rng(1)
+    imgs = []
+    for i in range(3):
+        p = tmp_path / f"c{i}.jpg"
+        cv2.imwrite(str(p), rng.integers(0, 255, (INPUT_SIZE, INPUT_SIZE, 3), dtype=np.uint8))
+        imgs.append(p)
+
+    def n_quant(path):
+        return sum(n.op_type == "QuantizeLinear" for n in onnx.load(str(path)).graph.node)
+
+    full = quantize_ptq(fp32, tmp_path / "full.onnx", imgs)
+    conv = quantize_ptq(fp32, tmp_path / "conv.onnx", imgs, op_types=["Conv"])
+    assert 0 < n_quant(conv) < n_quant(full)

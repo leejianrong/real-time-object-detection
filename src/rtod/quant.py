@@ -53,8 +53,14 @@ def decode_tail(model: Path) -> list[str]:
     return sorted(seen)
 
 
-def quantize_ptq(fp32: Path, out: Path, images: Sequence[Path]) -> Path:
-    """QDQ static INT8, calibrated on `images` (the first 5k of train10k, ADR-0006)."""
+def quantize_ptq(
+    fp32: Path, out: Path, images: Sequence[Path], op_types: list[str] | None = None
+) -> Path:
+    """QDQ static INT8, calibrated on `images` (the first 5k of train10k, ADR-0006).
+
+    `op_types=["Conv"]` quantizes only the convolutions, the same coverage as the trained fake-quant
+    graph of `rtod.qat` (path A); the default quantizes everything ORT can (SiLU, Add, Concat, ...).
+    """
     from onnxruntime.quantization import CalibrationMethod, QuantFormat, QuantType, quantize_static
 
     quantize_static(
@@ -66,6 +72,7 @@ def quantize_ptq(fp32: Path, out: Path, images: Sequence[Path]) -> Path:
         weight_type=QuantType.QInt8,
         per_channel=True,
         nodes_to_exclude=decode_tail(fp32),
+        op_types_to_quantize=op_types,
         calibrate_method=CalibrationMethod.MinMax,
     )
     return out
