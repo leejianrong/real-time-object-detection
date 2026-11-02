@@ -54,12 +54,18 @@ def decode_tail(model: Path) -> list[str]:
 
 
 def quantize_ptq(
-    fp32: Path, out: Path, images: Sequence[Path], op_types: list[str] | None = None
+    fp32: Path,
+    out: Path,
+    images: Sequence[Path],
+    op_types: list[str] | None = None,
+    method: str = "minmax",
 ) -> Path:
     """QDQ static INT8, calibrated on `images` (the first 5k of train10k, ADR-0006).
 
     `op_types=["Conv"]` quantizes only the convolutions, the same coverage as the trained fake-quant
     graph of `rtod.qat` (path A); the default quantizes everything ORT can (SiLU, Add, Concat, ...).
+    `method` is the range calibrator: minmax (absolute extremes, so more images only widen the
+    ranges), percentile or entropy (robust to outliers, but they keep every tensor in memory).
     """
     from onnxruntime.quantization import CalibrationMethod, QuantFormat, QuantType, quantize_static
 
@@ -73,6 +79,10 @@ def quantize_ptq(
         per_channel=True,
         nodes_to_exclude=decode_tail(fp32),
         op_types_to_quantize=op_types,
-        calibrate_method=CalibrationMethod.MinMax,
+        calibrate_method={
+            "minmax": CalibrationMethod.MinMax,
+            "percentile": CalibrationMethod.Percentile,
+            "entropy": CalibrationMethod.Entropy,
+        }[method],
     )
     return out

@@ -180,7 +180,9 @@ def main(argv: list[str] | None = None) -> int:
 
         calib = coco.read_ids("train10k")[: args.calib]
         ops = ["Conv"] if args.conv_only else None
-        print(quantize_ptq(args.fp32, args.out, coco.fetch_images(calib, "train"), ops))
+        print(
+            quantize_ptq(args.fp32, args.out, coco.fetch_images(calib, "train"), ops, args.method)
+        )
         return 0
     val_ids = None if args.subset == "val" else coco.read_ids(args.subset)
     scores = coco.evaluate(args.model, val_ids, jackknife=args.jackknife)
