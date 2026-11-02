@@ -71,15 +71,26 @@ NO_STOCK = re.compile(r"no (longer any )?instances (currently )?available", re.I
 RAW = "https://raw.githubusercontent.com/leejianrong/real-time-object-detection"
 
 
-# One-factor-at-a-time ablations for the QAT recipe: every config shares seed, lr, clip and
-# steps and changes one thing relative to its neighbour. The 40k run is last so its extra
-# images are fetched only after the cheaper configs have already produced results.
-SWEEP = {
-    "float": "--no-fake-quant",
-    "float_ema": "--no-fake-quant --ema",
-    "qat": "",
-    "qat_ema": "--ema",
-    "qat_ema_40k": "--ema --subset train40k",
+# Named ablation sweeps. Every config shares seed, lr, clip and steps with its neighbours unless it
+# overrides them, and changes one thing. Run order matters: configs on the 10k subset come first so
+# the extra images of a 40k config are fetched only after cheaper results exist.
+SWEEPS: dict[str, dict[str, str]] = {
+    "recipe": {
+        "float": "--no-fake-quant",
+        "float_ema": "--no-fake-quant --ema",
+        "qat": "",
+        "qat_ema": "--ema",
+        "qat_ema_40k": "--ema --subset train40k",
+    },
+    # Float-only (no fake-quant): where does the ~2 pt loss of a plain fine-tune come from? (The
+    # --steps 0 control, which must reproduce FP32, was checked locally: 38.1189 vs 38.12.)
+    "float2": {
+        "float_steps250": "--no-fake-quant --steps 250",
+        "float_lr1e5": "--no-fake-quant --lr 1e-5",
+        "float_ema999": "--no-fake-quant --ema --ema-decay 0.999",
+        "float_ema9998": "--no-fake-quant --ema --ema-decay 0.9998",
+        "float_lr1e5_ema9998": "--no-fake-quant --lr 1e-5 --ema --ema-decay 0.9998",
+    },
 }
 
 
