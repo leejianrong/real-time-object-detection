@@ -77,8 +77,8 @@ def main(argv: list[str] | None = None) -> int:
     t = sub.add_parser("qat", help="QAT fine-tune, export folded float, PTQ it (the pod job)")
     t.add_argument("--steps", type=int, default=1250)
     t.add_argument("--batch", type=int, default=16)
-    t.add_argument("--lr", type=float, default=2e-4)
-    t.add_argument("--clip", type=float, default=10.0, help="grad-norm clip threshold")
+    t.add_argument("--lr", type=float, default=1e-5)
+    t.add_argument("--clip", type=float, default=100.0, help="grad-norm clip threshold")
     t.add_argument("--device", default="cpu")
     t.add_argument("--subset", choices=["train10k", "train40k", "val200"], default="train10k")
     t.add_argument("--seed", type=int, default=0)
@@ -94,8 +94,8 @@ def main(argv: list[str] | None = None) -> int:
     j.add_argument("which", choices=["qat"])
     j.add_argument("--sha", help="pushed commit to run (default: HEAD)")
     j.add_argument("--steps", type=int, default=1250)
-    j.add_argument("--lr", type=float, default=2e-4)
-    j.add_argument("--clip", type=float, default=10.0)
+    j.add_argument("--lr", type=float, default=1e-5)
+    j.add_argument("--clip", type=float, default=100.0)
     j.add_argument("--sweep", choices=sorted(jobs.SWEEPS), help="run a named ablation sweep")
     j.add_argument(
         "--dry-run", action="store_true", help="print the plan and cap check, launch nothing"
