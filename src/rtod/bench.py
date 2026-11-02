@@ -37,6 +37,8 @@ class Result:
     git_sha: str
     map50_95: float | None = None
     map50: float | None = None
+    map50_95_se: float | None = None  # delete-d jackknife standard error
+    eval_subset: str | None = None  # val, val_dev, val_test, val200
     schema_version: int = field(default=SCHEMA_VERSION)
 
 

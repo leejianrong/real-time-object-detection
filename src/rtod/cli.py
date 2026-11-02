@@ -7,6 +7,7 @@ import json
 import sys
 from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 from rtod import bench, coco, jobs
 
@@ -66,6 +67,9 @@ def main(argv: list[str] | None = None) -> int:
     q.add_argument("out", type=Path)
     q.add_argument("--calib", type=int, default=5000, help="calibration images from train10k")
     q.add_argument(
+        "--calib-start", type=int, default=0, help="offset into train10k (subset checks)"
+    )
+    q.add_argument(
         "--conv-only", action="store_true", help="quantize only Conv (like the QAT graph)"
     )
     q.add_argument(
@@ -77,7 +81,12 @@ def main(argv: list[str] | None = None) -> int:
     b.add_argument("--threads", type=int, default=1)
     b.add_argument("--iters", type=int, default=bench.MIN_ITERS)
     b.add_argument("--quick", action="store_true", help="allow <200 iterations; labelled in output")
-    b.add_argument("--eval", choices=["val200", "val"], help="also compute mAP and merge it")
+    b.add_argument(
+        "--eval",
+        choices=["val200", "val", "val_dev", "val_test"],
+        help="also compute mAP (with --jackknife, its standard error) and merge it",
+    )
+    b.add_argument("--jackknife", type=int, default=0, help="B subsets for a standard error")
     b.add_argument("--out", type=Path, default=Path("results"))
     b.add_argument("--json", action="store_true")
     t = sub.add_parser("qat", help="QAT fine-tune, export folded float, PTQ it (the pod job)")
@@ -107,10 +116,22 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run", action="store_true", help="print the plan and cap check, launch nothing"
     )
     j.add_argument("--dest", type=Path, default=Path(".cache/jobs/qat_artifact"))
+    x = sub.add_parser("export-qdq", help="export a trained QAT checkpoint as a QDQ ONNX graph")
+    x.add_argument("checkpoint", type=Path, help="qat_model.pt saved by `rtod qat`")
+    x.add_argument("out", type=Path)
     g = sub.add_parser("plot", help="plot training curves from metrics.jsonl or a pod/console log")
     g.add_argument("source", type=Path)
     g.add_argument("out", type=Path, help="output PNG")
     args = p.parse_args(argv)
+
+    if args.cmd == "export-qdq":
+        from rtod.models import export_onnx
+        from rtod.qat import load_qat_checkpoint
+
+        model: Any = load_qat_checkpoint(args.checkpoint)  # a torch module; stubs lack its attrs
+        model.head.decode_in_inference = True
+        print(export_onnx(model, args.out))
+        return 0
 
     if args.cmd == "plot":
         from rtod.metrics import plot_training, read_rows
@@ -170,10 +191,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"error: {e}", file=sys.stderr)
             return 2
         if args.eval:
-            m = coco.evaluate(
-                args.model, coco.read_ids("val200") if args.eval == "val200" else None
-            )
+            eval_ids = None if args.eval == "val" else coco.read_ids(args.eval)
+            m = coco.evaluate(args.model, eval_ids, jackknife=args.jackknife)
             r.map50_95, r.map50 = m["map50_95"], m["map50"]
+            r.map50_95_se, r.eval_subset = m.get("map50_95_se"), args.eval
         path = bench.write_result(r, args.out)
         print(json.dumps(asdict(r)) if args.json else path)
         return 0
@@ -181,7 +202,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "quantize":
         from rtod.quant import quantize_ptq
 
-        calib = coco.read_ids("train10k")[: args.calib]
+        calib = coco.read_ids("train10k")[args.calib_start : args.calib_start + args.calib]
         ops = ["Conv"] if args.conv_only else None
         print(
             quantize_ptq(args.fp32, args.out, coco.fetch_images(calib, "train"), ops, args.method)
