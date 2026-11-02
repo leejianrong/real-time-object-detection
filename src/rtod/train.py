@@ -21,6 +21,7 @@ from torch.utils.data import DataLoader, Dataset
 
 from rtod import coco
 from rtod.detect import F32, Image, letterbox
+from rtod.metrics import MetricsWriter
 from rtod.qat import calibrate, prepare_qat, set_fake_quant
 
 MAX_LABELS = 120
@@ -78,6 +79,7 @@ def qat_finetune(
     calib_batches: int = 8,
     device: str = "cpu",
     workers: int = 4,
+    metrics_dir: Path | None = None,
 ) -> torch.nn.Module:
     """Returns the QAT model (fake-quant on) after `steps` optimizer steps."""
     from rtod.models import load_official_weights
@@ -96,6 +98,7 @@ def qat_finetune(
             m.w_fq.enable_observer()
 
     model.train()
+    writer = MetricsWriter(metrics_dir) if metrics_dir else None
     t0 = time.monotonic()
     opt = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     step = 0
@@ -112,8 +115,19 @@ def qat_finetune(
             loss = float(out["total_loss"])
             if not math.isfinite(loss):  # fail in seconds, not after the whole run has burned money
                 raise FloatingPointError(f"non-finite loss {loss} at step {step}")
+            rate = step / (time.monotonic() - t0)
+            if writer:
+                writer.log(
+                    step,
+                    loss=loss,
+                    iou=float(out["iou_loss"]),
+                    conf=float(out["conf_loss"]),
+                    cls=float(out["cls_loss"]),
+                    lr=opt.param_groups[0]["lr"],
+                    gnorm=float(gnorm),
+                    it_s=rate,
+                )
             if step in (1, steps) or step % 10 == 0:
-                rate = step / (time.monotonic() - t0)
                 mem = torch.cuda.max_memory_allocated() // 2**20 if device != "cpu" else 0
                 print(
                     f"TRAIN step={step}/{steps} loss={loss:.3f} iou={float(out['iou_loss']):.3f} "
@@ -124,6 +138,8 @@ def qat_finetune(
                 )
             if step >= steps:
                 break
+    if writer:
+        writer.close()
     return model.eval().cpu()
 
 

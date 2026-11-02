@@ -87,7 +87,20 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run", action="store_true", help="print the plan and cap check, launch nothing"
     )
     j.add_argument("--dest", type=Path, default=Path(".cache/jobs/qat_artifact"))
+    g = sub.add_parser("plot", help="plot training curves from metrics.jsonl or a pod/console log")
+    g.add_argument("source", type=Path)
+    g.add_argument("out", type=Path, help="output PNG")
     args = p.parse_args(argv)
+
+    if args.cmd == "plot":
+        from rtod.metrics import plot_training, read_rows
+
+        rows = read_rows(args.source)
+        if not rows:
+            print(f"error: no TRAIN rows in {args.source}", file=sys.stderr)
+            return 2
+        print(plot_training(rows, args.out))
+        return 0
 
     if args.cmd == "job":
         return _job_qat(args)
@@ -100,7 +113,13 @@ def main(argv: list[str] | None = None) -> int:
         ids = coco.read_ids(args.subset)
         args.out.mkdir(parents=True, exist_ok=True)
         model = qat_finetune(
-            ids, split, steps=args.steps, batch=args.batch, device=args.device, workers=args.workers
+            ids,
+            split,
+            steps=args.steps,
+            batch=args.batch,
+            device=args.device,
+            workers=args.workers,
+            metrics_dir=args.out,
         )
         folded = export_folded(model, args.out / "yolox_tiny_qat_folded.onnx")
         calib_imgs = coco.fetch_images(ids[:5000], split)
