@@ -4,7 +4,7 @@ import pytest
 
 from rtod.jobs import (
     NO_STOCK,
-    SWEEP,
+    SWEEPS,
     CapExceeded,
     JobSpec,
     Ledger,
@@ -199,15 +199,23 @@ def test_sweep_configs_reach_the_script_intact_through_rps_wrapper(tmp_path):
 
     (tmp_path / "scripts").mkdir()
     (tmp_path / "scripts/job_qat.sh").write_text('echo "GOT:$QAT_CONFIGS"\n')
-    cmd = bootstrap_cmd("abc", job_env(5, 5e-5, 100.0, SWEEP), base=f"file://{tmp_path}")
+    cmd = bootstrap_cmd("abc", job_env(5, 5e-5, 100.0, SWEEPS["recipe"]), base=f"file://{tmp_path}")
     log = tmp_path / "log"
     subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
     got = log.read_text().split("GOT:")[1].strip()
-    assert got.split(",") == [f"{n}:{f}" for n, f in SWEEP.items()]
+    assert got.split(",") == [f"{n}:{f}" for n, f in SWEEPS["recipe"].items()]
 
 
 def test_each_sweep_config_differs_from_the_previous_in_one_factor():
-    flags = [set(f.split()) for f in SWEEP.values()]
+    flags = [set(f.split()) for f in SWEEPS["recipe"].values()]
     # qat_ema_40k adds a data flag pair on top of qat_ema; the rest add or drop one flag
     assert flags[2] == set() and flags[3] == {"--ema"}
     assert flags[4] == {"--ema", "--subset", "train40k"}
+
+
+def test_every_named_sweep_encodes_cleanly_and_has_unique_config_names():
+    for name, configs in SWEEPS.items():
+        env = job_env(5, 5e-5, 100.0, configs)["QAT_CONFIGS"]
+        assert len(env.split(",")) == len(configs), name
+        assert all(c and ":" in c for c in env.split(",")), name
+        assert not set("|;'\n") & set(env), name  # characters the shell layers would eat

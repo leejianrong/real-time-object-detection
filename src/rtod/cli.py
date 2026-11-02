@@ -8,13 +8,11 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
-from rtod import bench, coco
+from rtod import bench, coco, jobs
 
 
 def _job_qat(args: argparse.Namespace) -> int:
     import subprocess
-
-    from rtod import jobs
 
     sha = (
         args.sha
@@ -33,7 +31,7 @@ def _job_qat(args: argparse.Namespace) -> int:
         image="runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
         cmd=jobs.bootstrap_cmd(
             sha,
-            jobs.job_env(args.steps, args.lr, args.clip, jobs.SWEEP if args.sweep else None),
+            jobs.job_env(args.steps, args.lr, args.clip, jobs.SWEEPS.get(args.sweep)),
         ),
         offers=(
             ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
@@ -98,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
     j.add_argument("--steps", type=int, default=1250)
     j.add_argument("--lr", type=float, default=2e-4)
     j.add_argument("--clip", type=float, default=10.0)
-    j.add_argument("--sweep", action="store_true", help="run every ablation config in one session")
+    j.add_argument("--sweep", choices=sorted(jobs.SWEEPS), help="run a named ablation sweep")
     j.add_argument(
         "--dry-run", action="store_true", help="print the plan and cap check, launch nothing"
     )
