@@ -65,7 +65,8 @@ def quantize_ptq(
     `op_types=["Conv"]` quantizes only the convolutions, the same coverage as the trained fake-quant
     graph of `rtod.qat` (path A); the default quantizes everything ORT can (SiLU, Add, Concat, ...).
     `method` is the range calibrator: minmax (absolute extremes, so more images only widen the
-    ranges), percentile or entropy (robust to outliers, but they keep every tensor in memory).
+    ranges), moving_avg (averaged extremes, outlier-robust, cheap), percentile or entropy (robust,
+    but they keep every tensor in memory).
     """
     from onnxruntime.quantization import CalibrationMethod, QuantFormat, QuantType, quantize_static
 
@@ -81,8 +82,12 @@ def quantize_ptq(
         op_types_to_quantize=op_types,
         calibrate_method={
             "minmax": CalibrationMethod.MinMax,
+            "moving_avg": CalibrationMethod.MinMax,
             "percentile": CalibrationMethod.Percentile,
             "entropy": CalibrationMethod.Entropy,
         }[method],
+        # moving-average min/max: per-batch extremes are averaged, so one outlier image cannot
+        # stretch a range (the estimator the QAT observers use); needs no extra memory
+        extra_options={"CalibMovingAverage": True} if method == "moving_avg" else {},
     )
     return out

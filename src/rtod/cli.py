@@ -68,6 +68,9 @@ def main(argv: list[str] | None = None) -> int:
     q.add_argument(
         "--conv-only", action="store_true", help="quantize only Conv (like the QAT graph)"
     )
+    q.add_argument(
+        "--method", choices=["minmax", "moving_avg", "percentile", "entropy"], default="minmax"
+    )
     b = sub.add_parser("bench", help="CPU latency benchmark, writes results JSON")
     b.add_argument("model", type=Path)
     b.add_argument("--variant", required=True, help="e.g. yolox-tiny/fp32")
