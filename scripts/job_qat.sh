@@ -9,13 +9,13 @@ set -Eeuo pipefail
 mkdir -p "$OUT" "$LOGS" ; START=$(date +%s) ; PHASE=boot
 
 say()   { printf 'RTOD t+%04ds %s\n' $(( $(date +%s) - START )) "$*" ; }
-phase() { PHASE=$1 ; say "phase=$1 ${2:-}" ; }
+phase() { PHASE=$1 ; echo "$1" > "$W/.phase" ; say "phase=$1 ${2:-}" ; }
 on_err() { local rc=$? ; say "RTOD_FAIL phase=$PHASE line=${BASH_LINENO[0]} exit=$rc cmd=$BASH_COMMAND" ; say "last log lines:" ; tail -n 40 "$LOGS"/*.log 2>/dev/null || true ; exit "$rc" ; }
 trap on_err ERR
 
 heartbeat() { while sleep 30 ; do
   gpu=$(nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total,temperature.gpu --format=csv,noheader,nounits 2>/dev/null | tr -d ' ' || echo na)
-  printf 'RTOD_HB t+%04ds phase=%s gpu(util%%,memMiB,totMiB,C)=%s ram_free_gb=%s disk_free_gb=%s load=%s\n' $(( $(date +%s) - START )) "$PHASE" "$gpu" \
+  printf 'RTOD_HB t+%04ds phase=%s gpu(util%%,memMiB,totMiB,C)=%s ram_free_gb=%s disk_free_gb=%s load=%s\n' $(( $(date +%s) - START )) "$(cat "$W/.phase" 2>/dev/null || echo ?)" "$gpu" \
     "$(free -g | awk '/Mem:/{print $7}')" "$(df -BG --output=avail $W | tail -1 | tr -d ' G')" "$(cut -d' ' -f1 /proc/loadavg)"
 done ; }
 heartbeat & HB=$! ; trap 'kill $HB 2>/dev/null || true' EXIT

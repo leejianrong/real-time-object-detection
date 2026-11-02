@@ -64,6 +64,25 @@ class Ledger:
         self.path.write_text(json.dumps([*self.entries(), entry], indent=2) + "\n")
 
 
+RAW = "https://raw.githubusercontent.com/leejianrong/real-time-object-detection"
+
+
+def bootstrap_cmd(sha: str, steps: int, base: str | None = None) -> str:
+    """The pod's job command: fetch the pinned script (after rp's watchdog is armed) and run it.
+
+    It must stay ONE simple command. rp runs it as `( ${JOB_CMD} 2>&1 | tee LOG )`, so a bare
+    `a && b || c` would bind the pipe to `c` only: the job's output would skip rp's log and rp's
+    idle watchdog would kill a healthy pod after 900 s of apparent silence (seen on the first run).
+    """
+    base = base or f"{RAW}/{sha}"
+    inner = (
+        f"(timeout 120 curl -fsSL {base}/scripts/job_qat.sh -o /tmp/job.sh "
+        f"&& RTOD_SHA={sha} QAT_STEPS={steps} bash /tmp/job.sh) "
+        '|| echo "RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?"'
+    )
+    return f"bash -c '{inner}'"
+
+
 class JobFailed(RuntimeError):
     pass
 
@@ -274,6 +293,12 @@ class RpProvider:
             lines.append(str(rec.get("line", "")))
         return lines
 
+    def _pod_exists(self) -> bool:
+        out = subprocess.run(
+            ["runpodctl", "pod", "list"], capture_output=True, text=True, timeout=60
+        )
+        return self.pod_id in out.stdout
+
     def follow(self, poll: float = 15, snapshot: Path | None = None) -> str:
         """Poll pod logs, show progress, persist the raw log, and return the artifact code.
 
@@ -302,6 +327,11 @@ class RpProvider:
                     raise JobFailed(ev.msg)
                 if ev.level == "artifact":
                     return ev.msg
+            if not self._pod_exists():
+                print("\n".join(lines[-40:]), flush=True)
+                raise JobFailed(
+                    "pod no longer exists (self-terminated or reclaimed) before the artifact"
+                )
             time.sleep(poll)
         raise JobFailed("lifetime reached without an artifact")
 
