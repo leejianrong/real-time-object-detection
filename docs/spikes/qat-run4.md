@@ -1,3 +1,5 @@
+> Superseded by [RESULTS.md](../RESULTS.md): this run used lr 2e-4, which turned out to be the cause.
+
 # QAT run 4: results and what they mean (REA-9)
 
 Recipe: official YOLOX-Tiny weights, BN folded, fake-quant on all 83 convs (`rtod.qat`), SGD lr 2e-4

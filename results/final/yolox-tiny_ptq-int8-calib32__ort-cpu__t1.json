@@ -1,0 +1,28 @@
+{
+  "variant": "yolox-tiny/ptq-int8-calib32",
+  "runtime": "ort-cpu",
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13620H",
+    "logical_cpus": 16,
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "python": "3.12.12",
+    "onnxruntime": "1.31.1"
+  },
+  "threads": 1,
+  "input_size": 416,
+  "warmup": 20,
+  "iters": 200,
+  "quick": false,
+  "model_ms_p50": 45.42130999470828,
+  "model_ms_p95": 60.524250397429554,
+  "e2e_ms_p50": 47.08431949984515,
+  "e2e_ms_p95": 62.060466456023256,
+  "fps": 21.23849321010764,
+  "size_bytes": 5593444,
+  "git_sha": "b4183b0",
+  "map50_95": 0.3274622261981971,
+  "map50": 0.5048731327404777,
+  "map50_95_se": 0.00450187752725565,
+  "eval_subset": "val_test",
+  "schema_version": 1
+}

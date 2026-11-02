@@ -1,0 +1,28 @@
+{
+  "variant": "yolox-tiny/qat-int8-pathA",
+  "runtime": "ort-cpu",
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13620H",
+    "logical_cpus": 16,
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "python": "3.12.12",
+    "onnxruntime": "1.31.1"
+  },
+  "threads": 1,
+  "input_size": 416,
+  "warmup": 20,
+  "iters": 200,
+  "quick": false,
+  "model_ms_p50": 61.22785399929853,
+  "model_ms_p95": 83.43644265041803,
+  "e2e_ms_p50": 63.24914399738191,
+  "e2e_ms_p95": 85.98614830189032,
+  "fps": 15.810490653302649,
+  "size_bytes": 20512977,
+  "git_sha": "b4183b0",
+  "map50_95": 0.32813659671261963,
+  "map50": 0.5063880185178359,
+  "map50_95_se": 0.005184049811138643,
+  "eval_subset": "val_test",
+  "schema_version": 1
+}
