@@ -116,6 +116,10 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run", action="store_true", help="print the plan and cap check, launch nothing"
     )
     j.add_argument("--dest", type=Path, default=Path(".cache/jobs/qat_artifact"))
+    pr = sub.add_parser("prune", help="structured channel pruning of the official weights")
+    pr.add_argument("--macs-removed", type=float, required=True, help="fraction in (0, 1)")
+    pr.add_argument("--out", type=Path, required=True, help="pruned model (torch pickle)")
+    pr.add_argument("--onnx", type=Path, help="also export the pruned float model")
     x = sub.add_parser("export-qdq", help="export a trained QAT checkpoint as a QDQ ONNX graph")
     x.add_argument("checkpoint", type=Path, help="qat_model.pt saved by `rtod qat`")
     x.add_argument("out", type=Path)
@@ -123,6 +127,27 @@ def main(argv: list[str] | None = None) -> int:
     g.add_argument("source", type=Path)
     g.add_argument("out", type=Path, help="output PNG")
     args = p.parse_args(argv)
+
+    if args.cmd == "prune":
+        import torch
+
+        from rtod.models import export_onnx, load_official_weights
+        from rtod.prune import macs_params, prune_to_macs
+
+        if not 0 < args.macs_removed < 1:
+            print(
+                f"error: --macs-removed must be in (0, 1), got {args.macs_removed}", file=sys.stderr
+            )
+            return 2
+        base: Any = load_official_weights()  # torch modules; stubs lack their attrs
+        pruned: Any = prune_to_macs(base, args.macs_removed)
+        torch.save(pruned, args.out)
+        (m0, p0), (m1, p1) = macs_params(base), macs_params(pruned)
+        print(f"macs {m1 / m0:.3f} of base, params {p1 / p0:.3f} of base -> {args.out}")
+        if args.onnx:
+            pruned.head.decode_in_inference = True
+            print(export_onnx(pruned, args.onnx))
+        return 0
 
     if args.cmd == "export-qdq":
         from rtod.models import export_onnx
