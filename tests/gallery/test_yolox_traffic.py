@@ -181,6 +181,14 @@ def test_two_visitors_ask_for_live_one_gets_it_and_the_slot_frees_on_close(monke
     asyncio.run(run())
 
 
+def test_a_model_that_cannot_load_says_why(monkeypatch, caplog):
+    monkeypatch.delenv("YOLOX_TRAFFIC_MODEL", raising=False)
+    monkeypatch.setitem(__import__("sys").modules, "huggingface_hub", None)  # import fails
+    with caplog.at_level("WARNING"):
+        assert ex.load_model() is None
+    assert "huggingface_hub" in caplog.text
+
+
 def test_missing_model_stays_in_replay_with_the_reason(monkeypatch):
     monkeypatch.setattr(ex, "load_model", lambda: None)
 
