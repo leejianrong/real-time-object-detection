@@ -40,7 +40,7 @@ gpu_job() {
   phase install "gpu job sha=$RTOD_SHA"
   pip install -q "rtod[fp16,coco] @ git+https://github.com/leejianrong/real-time-object-detection@${RTOD_SHA}" "onnxruntime-gpu==1.22.0" 2>&1 | tee "$LOGS/install.log"  # 1.22 is built for CUDA 12; 1.31 wants CUDA 13
   phase preflight "a real CUDA session must be created (the provider list alone says nothing)"
-  nvidia-smi 2>&1 | head -12 | tee "$LOGS/preflight.log"
+  nvidia-smi --query-gpu=name,driver_version,memory.total,memory.used --format=csv 2>&1 | tee "$LOGS/preflight.log"
   python3 - <<'PY' 2>&1 | tee -a "$LOGS/preflight.log"
 import sys
 import onnx, onnxruntime as ort
