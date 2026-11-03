@@ -87,6 +87,7 @@ def main(argv: list[str] | None = None) -> int:
         help="also compute mAP (with --jackknife, its standard error) and merge it",
     )
     b.add_argument("--jackknife", type=int, default=0, help="B subsets for a standard error")
+    b.add_argument("--resources", action="store_true", help="also measure peak RAM and CPU use")
     b.add_argument("--out", type=Path, default=Path("results"))
     b.add_argument("--json", action="store_true")
     t = sub.add_parser("qat", help="QAT fine-tune, export folded float, PTQ it (the pod job)")
@@ -226,6 +227,12 @@ def main(argv: list[str] | None = None) -> int:
         except ValueError as e:
             print(f"error: {e}", file=sys.stderr)
             return 2
+        if args.resources:
+            from rtod.resources import measure_resources
+
+            res = measure_resources(args.model, args.threads)
+            r.peak_rss_mb = res["peak_rss_mb"]
+            r.cpu_ms_per_inference, r.cores_used = res["cpu_ms_per_inference"], res["cores_used"]
         if args.eval:
             eval_ids = None if args.eval == "val" else coco.read_ids(args.eval)
             m = coco.evaluate(args.model, eval_ids, jackknife=args.jackknife)

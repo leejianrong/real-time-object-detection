@@ -39,6 +39,9 @@ class Result:
     map50: float | None = None
     map50_95_se: float | None = None  # delete-d jackknife standard error
     eval_subset: str | None = None  # val, val_dev, val_test, val200
+    peak_rss_mb: float | None = None  # memory the model adds above the post-import baseline
+    cpu_ms_per_inference: float | None = None  # process CPU time, summed over threads
+    cores_used: float | None = None  # CPU time / wall time while running
     schema_version: int = field(default=SCHEMA_VERSION)
 
 
