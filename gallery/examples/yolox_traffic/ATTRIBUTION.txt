@@ -1,7 +1,7 @@
 Clip: "Road traffic in Ljubljana" by Sounds of Changes
 https://commons.wikimedia.org/wiki/File:Road_traffic_in_Ljubljana.webm
 Licence: CC BY 3.0, https://creativecommons.org/licenses/by/3.0/
-Changes: the first 15 seconds only, no audio, 12 frames per second, downscaled to 480x270, stored as JPEG frames.
+Changes: the first 15 seconds only, no audio, 12 frames per second, downscaled to 640x360, stored as JPEG frames.
 
 Model: YOLOX-Tiny (Megvii, Apache-2.0), INT8 post-training quantization, https://huggingface.co/jianlee/yolox-tiny-quantized
 Code: https://github.com/leejianrong/real-time-object-detection (Apache-2.0)

@@ -181,6 +181,39 @@ def test_two_visitors_ask_for_live_one_gets_it_and_the_slot_frees_on_close(monke
     asyncio.run(run())
 
 
+def test_the_recorded_live_control_takes_and_gives_back_the_model(monkeypatch):
+    monkeypatch.setattr(ex, "load_model", lambda: StubModel())
+
+    async def run():
+        c = FakeCtx()
+        ex.build_session(c)
+        p = player_of(c)
+        p.mode.set(ex.LIVE)
+        await p.sync_mode()
+        assert p.live and ex.SLOT.held and p.mode.value == ex.LIVE
+        p.mode.set(ex.RECORDED)
+        await p.sync_mode()
+        assert not p.live and not ex.SLOT.held and p.badge.value.startswith("Replay: recorded on")
+        c.close()
+
+    asyncio.run(run())
+
+
+def test_a_refused_live_request_puts_the_control_back_on_recorded(monkeypatch):
+    monkeypatch.setattr(ex, "load_model", lambda: None)
+
+    async def run():
+        c = FakeCtx()
+        ex.build_session(c)
+        p = player_of(c)
+        p.mode.set(ex.LIVE)
+        await p.sync_mode()
+        assert p.mode.value == ex.RECORDED and "model unavailable" in p.badge.value
+        c.close()
+
+    asyncio.run(run())
+
+
 def test_a_model_that_cannot_load_says_why(monkeypatch, caplog):
     monkeypatch.delenv("YOLOX_TRAFFIC_MODEL", raising=False)
     monkeypatch.setitem(__import__("sys").modules, "huggingface_hub", None)  # import fails
