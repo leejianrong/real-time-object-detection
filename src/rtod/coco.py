@@ -144,7 +144,11 @@ def _score(gt: Any, results: list[dict[str, Any]], ids: Sequence[int], quiet: bo
 
 
 def evaluate(
-    model: Path, ids: Sequence[int] | None = None, split: str = "val", jackknife: int = 0
+    model: Path,
+    ids: Sequence[int] | None = None,
+    split: str = "val",
+    jackknife: int = 0,
+    device: str = "cpu",
 ) -> dict[str, Any]:
     """mAP50-95 and mAP50 of an ONNX model on `ids` (default: all of val2017).
 
@@ -156,7 +160,7 @@ def evaluate(
     gt = COCO(str(annotation_file(split)))
     ids = sorted(gt.getImgIds()) if ids is None else list(ids)
     cat_ids = sorted(gt.getCatIds())
-    det: Detector = OrtDetector(model, conf=EVAL_CONF, iou=EVAL_IOU)
+    det: Detector = OrtDetector(model, conf=EVAL_CONF, iou=EVAL_IOU, device=device)
     results: list[dict[str, Any]] = []
     for i, path in zip(ids, fetch_images(ids, split), strict=True):
         img = cv2.imread(str(path))

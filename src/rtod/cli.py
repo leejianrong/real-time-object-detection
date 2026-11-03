@@ -27,23 +27,26 @@ def _job_qat(args: argparse.Namespace) -> int:
     if not on_main:
         print(f"error: {sha} is not on origin/main; the pod installs from GitHub", file=sys.stderr)
         return 2
+    gpu = args.which == "gpu"
+    env = (
+        {"RTOD_JOB": "gpu"}
+        if gpu
+        else jobs.job_env(args.steps, args.lr, args.clip, jobs.SWEEPS.get(args.sweep))
+    )
     spec = jobs.JobSpec(
-        name="qat",
+        name=args.which,
         image="runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
-        cmd=jobs.bootstrap_cmd(
-            sha,
-            jobs.job_env(args.steps, args.lr, args.clip, jobs.SWEEPS.get(args.sweep)),
-        ),
+        cmd=jobs.bootstrap_cmd(sha, env),
         offers=(
             ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
             ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),
         ),
         max_hourly_usd=0.40,
-        max_hours=1.5 if args.sweep else 1.0,
+        max_hours=1.0 if gpu or not args.sweep else 1.5,
     )
     ledger = jobs.Ledger()
     print(
-        f"job qat sha={sha[:8]} steps={args.steps} worst case ${spec.worst_case_usd:.2f}; "
+        f"job {args.which} sha={sha[:8]} steps={args.steps} worst case ${spec.worst_case_usd:.2f}; "
         f"spent ${ledger.spent():.2f} of ${ledger.cap:.2f}"
     )
     ledger.check(spec)
@@ -61,6 +64,7 @@ def main(argv: list[str] | None = None) -> int:
     e.add_argument("model", type=Path)
     e.add_argument("--subset", choices=["val200", "val", "val_dev", "val_test"], default="val")
     e.add_argument("--jackknife", type=int, default=0, help="B subsets for a standard error")
+    e.add_argument("--device", choices=["cpu", "cuda", "tensorrt"], default="cpu")
     e.add_argument("--json", action="store_true")
     q = sub.add_parser("quantize", help="PTQ INT8 (QDQ) from an FP32 ONNX")
     q.add_argument("fp32", type=Path)
@@ -87,6 +91,7 @@ def main(argv: list[str] | None = None) -> int:
         help="also compute mAP (with --jackknife, its standard error) and merge it",
     )
     b.add_argument("--jackknife", type=int, default=0, help="B subsets for a standard error")
+    b.add_argument("--device", choices=["cpu", "cuda", "tensorrt"], default="cpu")
     b.add_argument("--resources", action="store_true", help="also measure peak RAM and CPU use")
     b.add_argument("--out", type=Path, default=Path("results"))
     b.add_argument("--json", action="store_true")
@@ -120,7 +125,7 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument("--no-ptq", action="store_true", help="stop after exporting the folded model")
     t.add_argument("--out", type=Path, default=Path("qat_out"))
     j = sub.add_parser("job", help="launch a RunPod job under the spend cap")
-    j.add_argument("which", choices=["qat"])
+    j.add_argument("which", choices=["qat", "gpu"])
     j.add_argument("--sha", help="pushed commit to run (default: HEAD)")
     j.add_argument("--steps", type=int, default=1250)
     j.add_argument("--lr", type=float, default=1e-5)
@@ -246,7 +251,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "bench":
         try:
             r = bench.bench(
-                args.model, args.variant, threads=args.threads, iters=args.iters, quick=args.quick
+                args.model,
+                args.variant,
+                threads=args.threads,
+                iters=args.iters,
+                quick=args.quick,
+                device=args.device,
             )
         except ValueError as e:
             print(f"error: {e}", file=sys.stderr)
@@ -259,7 +269,7 @@ def main(argv: list[str] | None = None) -> int:
             r.cpu_ms_per_inference, r.cores_used = res["cpu_ms_per_inference"], res["cores_used"]
         if args.eval:
             eval_ids = None if args.eval == "val" else coco.read_ids(args.eval)
-            m = coco.evaluate(args.model, eval_ids, jackknife=args.jackknife)
+            m = coco.evaluate(args.model, eval_ids, jackknife=args.jackknife, device=args.device)
             r.map50_95, r.map50 = m["map50_95"], m["map50"]
             r.map50_95_se, r.eval_subset = m.get("map50_95_se"), args.eval
             r.per_class_ap = m.get("per_class_ap")
@@ -277,7 +287,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 0
     val_ids = None if args.subset == "val" else coco.read_ids(args.subset)
-    scores = coco.evaluate(args.model, val_ids, jackknife=args.jackknife)
+    scores = coco.evaluate(args.model, val_ids, jackknife=args.jackknife, device=args.device)
     res = {"model": str(args.model), "subset": args.subset, **scores}
     print(json.dumps(res) if args.json else res)
     return 0

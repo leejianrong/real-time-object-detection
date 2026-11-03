@@ -9,7 +9,7 @@ from __future__ import annotations
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 import cv2
 import numpy as np
@@ -86,7 +86,7 @@ def postprocess(
     return Detections(boxes[keep], scores[keep].astype(np.float32), cls[keep].astype(np.int64))
 
 
-def _providers(device: str) -> list[str]:
+def _providers(device: str) -> list[Any]:
     """Providers for `device` ("cpu" or "cuda"); a missing CUDA falls back to CPU with a warning."""
     import onnxruntime as ort
 
@@ -98,8 +98,23 @@ def _providers(device: str) -> list[str]:
             "running on the CPU instead",
             stacklevel=3,
         )
+    elif device == "tensorrt":
+        if "TensorrtExecutionProvider" in ort.get_available_providers():
+            trt = {
+                "trt_fp16_enable": True,
+                "trt_int8_enable": True,  # QDQ models carry their own scales
+                "trt_engine_cache_enable": True,
+                "trt_engine_cache_path": ".cache/trt",
+            }
+            return [
+                ("TensorrtExecutionProvider", trt),
+                "CUDAExecutionProvider",
+                "CPUExecutionProvider",
+            ]
+        warnings.warn("TensorrtExecutionProvider is not available; falling back", stacklevel=3)
+        return _providers("cuda")
     elif device != "cpu":
-        raise ValueError(f"device must be 'cpu' or 'cuda', got {device!r}")
+        raise ValueError(f"device must be 'cpu', 'cuda' or 'tensorrt', got {device!r}")
     return ["CPUExecutionProvider"]
 
 

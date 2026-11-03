@@ -60,3 +60,17 @@ def _iou(a, b):
     h = max(0.0, min(a[3], b[3]) - max(a[1], b[1]))
     inter = w * h
     return inter / ((a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter)
+
+
+def test_fp16_model_loads_and_matches_fp32_within_half_precision_noise(tmp_path):
+    """Regression: the first conversion produced Add nodes mixing float16 and float32 inputs and
+    ORT refused to load it (found by loading it before paying for a GPU pod)."""
+    src = export_onnx(build_yolox_tiny(), tmp_path / "m.onnx")
+    x = np.random.default_rng(0).random((1, 3, 416, 416), dtype=np.float32) * 255
+    ref = ort.InferenceSession(str(src), providers=["CPUExecutionProvider"]).run(
+        None, {"images": x}
+    )[0]
+    half = ort.InferenceSession(
+        str(to_fp16(src, tmp_path / "m16.onnx")), providers=["CPUExecutionProvider"]
+    ).run(None, {"images": x})[0]
+    assert np.abs(half - ref).max() < 0.02 * np.abs(ref).max()

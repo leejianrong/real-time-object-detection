@@ -170,7 +170,7 @@ FATAL_MARKERS = (
 # Phases that must keep printing progress (TRAIN/DATA/PRUNE lines): (warn, fatal) seconds quiet.
 # Heartbeats alone only prove the shell is alive: a job can sit idle for 20 minutes with a healthy
 # heartbeat (seen when pruning ran at 64 threads). Pruning, data fetch and training all print.
-PROGRESS_SILENCE = {"train": (300.0, 900.0)}
+PROGRESS_SILENCE = {"train": (300.0, 900.0), "bench": (300.0, 900.0)}
 GPU_IDLE_BEATS = 4  # consecutive heartbeats with the GPU unused during train (about 2 minutes)
 STATUS_EVERY = 120.0
 GPU_FIELD = re.compile(r"gpu\(util%,memMiB,totMiB,C\)=(\d+),(\d+),")
@@ -180,6 +180,7 @@ PHASE_BUDGET = {
     "preflight": 120,
     "smoke": 600,
     "train": 2700,
+    "bench": 2400,
     "send": 600,
     "ptq": 1800,
     "eval": 1800,

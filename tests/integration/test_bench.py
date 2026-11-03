@@ -23,3 +23,17 @@ def test_resource_measurement_runs_in_a_fresh_process(tmp_path):
     r = measure_resources(onnx, threads=1, iters=5)
     assert r["peak_rss_mb"] > 5  # an 20 MB model plus activations must add something
     assert 0 < r["cores_used"] < 1.6 and r["cpu_ms_per_inference"] > 0
+
+
+def test_gpu_bench_refuses_to_time_the_cpu_when_cuda_is_missing(tmp_path):
+    """A silent CPU fallback would publish CPU numbers under a GPU label."""
+    import onnxruntime as ort
+
+    if "CUDAExecutionProvider" in ort.get_available_providers():
+        pytest.skip("this machine has CUDA")
+    onnx = export_onnx(build_yolox_tiny(), tmp_path / "m.onnx")
+    with (
+        pytest.warns(UserWarning),
+        pytest.raises(ValueError, match="fell back to CPUExecutionProvider"),
+    ):
+        bench(onnx, "yolox-tiny/gpu", warmup=1, iters=2, quick=True, device="cuda")
