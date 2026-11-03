@@ -138,6 +138,7 @@ def main(argv: list[str] | None = None) -> int:
     j.add_argument("--steps", type=int, default=1250)
     j.add_argument("--lr", type=float, default=1e-5)
     j.add_argument("--clip", type=float, default=100.0)
+    j.add_argument("--only", choices=["cuda", "tensorrt"], help="gpu job: run just this stage")
     j.add_argument("--sweep", choices=sorted(jobs.SWEEPS), help="run a named ablation sweep")
     j.add_argument(
         "--dry-run", action="store_true", help="print the plan and cap check, launch nothing"
