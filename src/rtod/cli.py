@@ -29,7 +29,7 @@ def _job_qat(args: argparse.Namespace) -> int:
         return 2
     gpu = args.which == "gpu"
     env = (
-        {"RTOD_JOB": "gpu"}
+        jobs.gpu_env(args.only)
         if gpu
         else jobs.job_env(args.steps, args.lr, args.clip, jobs.SWEEPS.get(args.sweep))
     )
