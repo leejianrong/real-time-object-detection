@@ -38,8 +38,15 @@ def _job_qat(args: argparse.Namespace) -> int:
         image="runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
         cmd=jobs.bootstrap_cmd(sha, env),
         offers=(
-            ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
-            ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),
+            (
+                ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),
+                ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
+            )
+            if gpu  # a community 4090 host failed cudaSetDevice; the secure Adas ran every training job
+            else (
+                ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
+                ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),
+            )
         ),
         max_hourly_usd=0.40,
         max_hours=1.0 if gpu or not args.sweep else 1.5,
