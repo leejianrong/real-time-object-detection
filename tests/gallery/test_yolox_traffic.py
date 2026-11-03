@@ -124,6 +124,14 @@ def test_assets_are_downloaded_when_only_the_py_file_was_copied(monkeypatch, tmp
     assert len(fetched) == 2
 
 
+def test_the_page_credits_the_clip_and_the_model():
+    """CC BY needs visible attribution, not just a file beside the example."""
+    import json as _json
+
+    text = _json.dumps(ex.Session(ex.page(ex.Player(ex.Clip()))).snapshot())
+    assert "Sounds of Changes" in text and "CC BY 3.0" in text and "Megvii" in text
+
+
 # ---- the recorded data -------------------------------------------------------------------------
 def test_replay_file_is_small_versioned_and_covers_every_frame():
     path = ROOT / "gallery/examples/yolox_traffic/replay.json"
