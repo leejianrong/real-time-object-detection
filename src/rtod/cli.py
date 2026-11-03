@@ -184,11 +184,19 @@ def main(argv: list[str] | None = None) -> int:
         args.out.mkdir(parents=True, exist_ok=True)
         init = None
         if args.prune_macs is not None:
+            import time
+
             from rtod.models import load_official_weights
             from rtod.prune import macs_params, prune_to_macs
 
+            t0 = time.monotonic()
+            print(f"PRUNE start macs_removed={args.prune_macs}", flush=True)
             init = prune_to_macs(load_official_weights(), args.prune_macs)
-            print(f"PRUNE macs={macs_params(init)[0]:.3e} params={macs_params(init)[1]:.3e}")
+            print(
+                f"PRUNE done in {time.monotonic() - t0:.0f}s macs={macs_params(init)[0]:.3e} "
+                f"params={macs_params(init)[1]:.3e}",
+                flush=True,
+            )
         model = qat_finetune(
             ids,
             split,

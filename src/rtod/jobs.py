@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import signal
 import subprocess
 import time
 from collections.abc import Iterator
@@ -147,7 +148,7 @@ class JobFailed(RuntimeError):
 
 @dataclass(frozen=True)
 class Event:
-    level: str  # info | warn | fatal | artifact | done
+    level: str  # info | status | warn | fatal | artifact | done
     msg: str
 
 
@@ -160,6 +161,14 @@ FATAL_MARKERS = (
     "No space left on device",
 )
 # Per-phase budgets in seconds: an overrun is a warning (the lifetime cap is the hard stop).
+# Phases that must keep printing progress (TRAIN/DATA/PRUNE lines): (warn, fatal) seconds quiet.
+# Heartbeats alone only prove the shell is alive: a job can sit idle for 20 minutes with a healthy
+# heartbeat (seen when pruning ran at 64 threads). Pruning, data fetch and training all print.
+PROGRESS_SILENCE = {"train": (300.0, 900.0)}
+GPU_IDLE_BEATS = 4  # consecutive heartbeats with the GPU unused during train (about 2 minutes)
+STATUS_EVERY = 120.0
+GPU_FIELD = re.compile(r"gpu\(util%,memMiB,totMiB,C\)=(\d+),(\d+),")
+
 PHASE_BUDGET = {
     "install": 600,
     "preflight": 120,
@@ -191,6 +200,9 @@ class LogMonitor:
         self.first_output: float | None = None
         self.last_hb: float | None = None
         self.phase, self.phase_since = "none", start
+        self.last_progress, self.last_progress_line = start, ""
+        self.gpu_idle_beats, self.last_gpu = 0, "na"
+        self._last_status = start
         self._seen: set[str] = set()
         self._warned: set[str] = set()
 
@@ -204,10 +216,14 @@ class LogMonitor:
                 self.first_output = now
             if "RTOD_HB" in line:
                 self.last_hb = now
+                self._beat(line)
+            if line.startswith(("TRAIN ", "DATA ", "PRUNE ")):
+                self.last_progress, self.last_progress_line = now, line[:120]
             if " phase=" in line and line.startswith("RTOD t+"):
                 self.phase, self.phase_since = line.split("phase=")[1].split()[0], now
+                self.last_progress, self.gpu_idle_beats = now, 0
                 out.append(Event("info", line))
-            elif line.startswith(("TRAIN ", "DATA ")) or "RTOD_ARTIFACT" in line:
+            elif line.startswith(("TRAIN ", "DATA ", "PRUNE ")) or "RTOD_ARTIFACT" in line:
                 out.append(Event("info", line))
             if "RTOD_DONE" in line:
                 out.append(Event("done", line))
@@ -217,6 +233,15 @@ class LogMonitor:
                 out.append(Event("artifact", line.split("=")[-1].strip()))
         out += self._time_checks(now)
         return out
+
+    def _beat(self, line: str) -> None:
+        m = GPU_FIELD.search(line)
+        if not m:
+            return
+        util, mem = int(m[1]), int(m[2])
+        self.last_gpu = f"util {util}% mem {mem}MiB"
+        idle = util <= 2 and mem <= 100  # nothing resident: the model is not on the GPU
+        self.gpu_idle_beats = self.gpu_idle_beats + 1 if idle and self.phase == "train" else 0
 
     def _warn_once(self, key: str, msg: str) -> list[Event]:
         if key in self._warned:
@@ -251,6 +276,40 @@ class LogMonitor:
             out += self._warn_once(
                 f"budget-{self.phase}", f"phase {self.phase} over its {budget}s budget"
             )
+        silence = PROGRESS_SILENCE.get(self.phase)
+        if silence:
+            quiet = now - max(self.last_progress, self.phase_since)
+            if quiet > silence[1]:
+                out.append(
+                    Event(
+                        "fatal",
+                        f"no progress for {quiet:.0f}s in phase {self.phase} "
+                        f"(last: {self.last_progress_line or 'none'}; gpu {self.last_gpu})",
+                    )
+                )
+            elif quiet > silence[0]:
+                out += self._warn_once(
+                    f"quiet-{self.phase}-{self.phase_since}",
+                    f"no progress lines for {quiet:.0f}s in phase {self.phase}; "
+                    f"gpu {self.last_gpu}",
+                )
+        if self.gpu_idle_beats >= GPU_IDLE_BEATS:
+            out += self._warn_once(
+                f"gpu-idle-{self.phase_since}",
+                f"GPU unused for {self.gpu_idle_beats} heartbeats during train "
+                "(model not on the GPU?)",
+            )
+        if now - self._last_status >= STATUS_EVERY:
+            self._last_status = now
+            out.append(
+                Event(
+                    "status",
+                    f"t+{now - self.start:.0f}s phase={self.phase} "
+                    f"for {now - self.phase_since:.0f}s, "
+                    f"gpu {self.last_gpu}, last progress {now - self.last_progress:.0f}s ago: "
+                    f"{self.last_progress_line or '-'}",
+                )
+            )
         return out
 
 
@@ -262,10 +321,19 @@ class Provider(Protocol):
     def active(self) -> bool: ...
 
 
+def _interrupt(signum: int, frame: object) -> None:
+    raise KeyboardInterrupt(f"signal {signum}")
+
+
 def run_job(provider: Provider, ledger: Ledger, spec: JobSpec, dest: Path) -> None:
-    """Check the cap, run the job, always tear down and charge, verify no pod is left."""
+    """Check the cap, run the job, always tear down and charge, verify no pod is left.
+
+    SIGTERM is turned into KeyboardInterrupt so `kill <driver>` also tears the pod down and
+    charges the ledger (a plain SIGTERM skipped the finally block and left the pod running).
+    """
     ledger.check(spec)
     start = time.monotonic()
+    old = signal.signal(signal.SIGTERM, _interrupt)
     try:
         provider.up(spec)
         for n, code in enumerate(provider.follow(), 1):  # the job may publish several artifacts
@@ -273,6 +341,7 @@ def run_job(provider: Provider, ledger: Ledger, spec: JobSpec, dest: Path) -> No
     finally:
         provider.down()
         ledger.record(spec, min((time.monotonic() - start) / 3600, spec.max_hours))
+        signal.signal(signal.SIGTERM, old)
     if provider.active():
         raise RuntimeError(f"{spec.name}: a pod is still running after teardown; stop it by hand")
 
