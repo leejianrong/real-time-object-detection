@@ -183,6 +183,7 @@ def test_done_marker_is_reported_and_is_not_an_error():
     [
         "create pod: There are no instances currently available",
         "create pod: There are no longer any instances available with the requested specs.",
+        "rp: error: pod had 15 GB RAM < 16; terminated",  # already terminated: next offer
     ],
 )
 def test_both_runpod_stock_wordings_are_retried(msg):
@@ -300,3 +301,9 @@ def test_job_kind_reaches_the_pod_script_through_rps_wrapper(tmp_path):
     log = tmp_path / "log"
     subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
     assert "KIND:gpu" in log.read_text()
+
+
+def test_min_ram_follows_the_job_spec():
+    assert RpProvider.env(SPEC)["RP_MIN_RAM_GB"] == "16"
+    small = JobSpec("gpu", "img", "x", (("SECURE", "A"),), 0.4, 1.0, min_ram_gb=8)
+    assert RpProvider.env(small)["RP_MIN_RAM_GB"] == "8"

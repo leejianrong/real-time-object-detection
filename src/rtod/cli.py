@@ -50,6 +50,7 @@ def _job_qat(args: argparse.Namespace) -> int:
         ),
         max_hourly_usd=0.40,
         max_hours=1.0 if gpu or not args.sweep else 1.5,
+        min_ram_gb=8 if gpu else 16,
     )
     ledger = jobs.Ledger()
     print(
