@@ -42,7 +42,7 @@ def _job_qat(args: argparse.Namespace) -> int:
                 ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),
                 ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
             )
-            if gpu  # a community 4090 host failed cudaSetDevice; the secure Adas ran every training job
+            if gpu  # a community 4090 host failed cudaSetDevice; secure Adas ran all training
             else (
                 ("COMMUNITY", "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"),
                 ("SECURE", "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"),
