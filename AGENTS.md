@@ -4,7 +4,7 @@ Quantize and prune YOLOX-Tiny, benchmark vs the original, ship a Colab showcase 
 Source of truth: `PLAN.md`, `SLICES.md`, `docs/adr/`, decisions in `QUESTIONS.md`. Trust the code over the docs if they disagree, and say so.
 
 ## Status
-V1 and V2 done (QAT ties tuned PTQ: `docs/RESULTS.md`, ADR-0007). HF weights published (`rtod.hub.fetch_model`). V3 pruning: `rtod prune` and the fine-tune sweep exist, results pending. Next: GPU path (V4), indah demo (V5-V6), notebook (V7; dashboard design mockup approved first, REA-31/32). Board: Pandan 40 (key REA). Slow tests (`-m slow`) download weights; CI skips them.
+v0.1.0 released: PTQ, QAT, pruning, GPU (CUDA; TensorRT rejected our INT8 graphs), Colab notebook, live indah dashboard (`make dashboard`), models on the Hub. Open: the indah gallery PR (REA-20 to REA-25, a PR into the indah repo, needs the Fly measurement). To release: bump `REF` in `notebooks/make_notebook.py`, regenerate, tag. Board: Pandan 40 (key REA). Slow tests (`-m slow`, `-m notebook`) download weights; CI skips them except the `notebook` job on main.
 
 ## Commands
 `make` lists targets. `make install`, `make check` (lint + mypy + unit, also the pre-push hook), `make integration`, `make hooks` (once per clone).
