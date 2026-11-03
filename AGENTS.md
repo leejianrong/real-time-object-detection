@@ -4,7 +4,7 @@ Quantize and prune YOLOX-Tiny, benchmark vs the original, ship a Colab showcase 
 Source of truth: `PLAN.md`, `SLICES.md`, `docs/adr/`, decisions in `QUESTIONS.md`. Trust the code over the docs if they disagree, and say so.
 
 ## Status
-v0.1.0 released: PTQ, QAT, pruning, GPU (CUDA; TensorRT rejected our INT8 graphs), Colab notebook, live indah dashboard (`make dashboard`), models on the Hub. Open: the indah gallery PR (REA-20 to REA-25, a PR into the indah repo, needs the Fly measurement). To release: bump `REF` in `notebooks/make_notebook.py`, regenerate, tag. Board: Pandan 40 (key REA). Slow tests (`-m slow`, `-m notebook`) download weights; CI skips them except the `notebook` job on main.
+v0.1.0 released: PTQ, QAT, pruning, GPU (CUDA; TensorRT rejected our INT8 graphs), Colab notebook, live indah dashboard (`make dashboard`), models on the Hub. The indah gallery demo is a ready bundle in `gallery/` (`gallery/pr/apply.sh <indah checkout>`, description in `gallery/pr/PR.md`); the PR into indah is not opened. To release: bump `REF` in `notebooks/make_notebook.py`, regenerate, tag. Board: Pandan 40 (key REA). Slow tests (`-m slow`, `-m notebook`) download weights; CI skips them except the `notebook` job on main.
 
 ## Commands
 `make` lists targets. `make install`, `make check` (lint + mypy + unit, also the pre-push hook), `make integration`, `make hooks` (once per clone).

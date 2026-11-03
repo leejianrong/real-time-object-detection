@@ -20,7 +20,7 @@ unit: ## Fast tests, no infra
 	uv run pytest tests/unit -q
 
 integration: ## CPU integration tests
-	uv run pytest tests/integration -m "integration and not slow" -q
+	uv run pytest tests/integration tests/gallery -m "integration and not slow" -q
 
 notebook: ## Rebuild the showcase notebook and run it; outputs in notebooks/out/
 	uv run python notebooks/make_notebook.py
