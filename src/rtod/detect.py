@@ -90,6 +90,9 @@ def _providers(device: str) -> list[Any]:
     """Providers for `device` ("cpu" or "cuda"); a missing CUDA falls back to CPU with a warning."""
     import onnxruntime as ort
 
+    if device != "cpu" and hasattr(ort, "preload_dlls"):
+        ort.preload_dlls()  # finds CUDA/cuDNN in the pip nvidia-* wheels; else the EP fails
+
     if device == "cuda":
         if "CUDAExecutionProvider" in ort.get_available_providers():
             return ["CUDAExecutionProvider", "CPUExecutionProvider"]

@@ -25,3 +25,16 @@ def test_cuda_provider_is_used_when_present(monkeypatch):
 def test_unknown_device_is_rejected():
     with pytest.raises(ValueError, match="device"):
         detect._providers("tpu")
+
+
+def test_gpu_devices_preload_the_cuda_libraries_and_cpu_does_not(monkeypatch):
+    """Regression: `rtod bench --device cuda` failed on a pod ("Require cuDNN 9 and CUDA 12")
+    because only the preflight script called preload_dlls; the detector has to do it itself."""
+    calls = []
+    monkeypatch.setattr(ort, "preload_dlls", lambda *a, **k: calls.append(1), raising=False)
+    monkeypatch.setattr(ort, "get_available_providers", lambda: ["CPUExecutionProvider"])
+    detect._providers("cpu")
+    assert calls == []
+    with pytest.warns(UserWarning):
+        detect._providers("cuda")
+    assert calls == [1]
