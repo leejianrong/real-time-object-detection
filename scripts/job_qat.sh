@@ -38,17 +38,25 @@ publish() {  # publish() <code-base> <tarball>: the sender must stay up until th
 gpu_job() {
   OUT=$W/gpu_results ; M=$W/models ; mkdir -p "$OUT" "$M"
   phase install "gpu job sha=$RTOD_SHA"
-  pip install -q "rtod[fp16,coco] @ git+https://github.com/leejianrong/real-time-object-detection@${RTOD_SHA}" onnxruntime-gpu 2>&1 | tee "$LOGS/install.log"
-  phase preflight "onnxruntime CUDA provider"
+  pip install -q "rtod[fp16,coco] @ git+https://github.com/leejianrong/real-time-object-detection@${RTOD_SHA}" "onnxruntime-gpu==1.22.0" 2>&1 | tee "$LOGS/install.log"  # 1.22 is built for CUDA 12; 1.31 wants CUDA 13
+  phase preflight "a real CUDA session must be created (the provider list alone says nothing)"
   python3 - <<'PY' 2>&1 | tee "$LOGS/preflight.log"
-import sys, onnxruntime as ort
+import sys
+import onnx, onnxruntime as ort
+from onnx import TensorProto, helper
 try:
     ort.preload_dlls()
 except Exception as e:
     print("preload_dlls:", e, flush=True)
-print("ort", ort.__version__, ort.get_available_providers(), flush=True)
-if "CUDAExecutionProvider" not in ort.get_available_providers():
-    print("RTOD_FATAL phase=preflight no CUDAExecutionProvider in onnxruntime-gpu", flush=True); sys.exit(3)
+g = helper.make_graph([helper.make_node("Identity", ["x"], ["y"])], "g",
+    [helper.make_tensor_value_info("x", TensorProto.FLOAT, [1])],
+    [helper.make_tensor_value_info("y", TensorProto.FLOAT, [1])])
+m = helper.make_model(g, opset_imports=[helper.make_opsetid("", 17)], ir_version=8)
+sess = ort.InferenceSession(m.SerializeToString(), providers=["CUDAExecutionProvider", "CPUExecutionProvider"])
+print("ort", ort.__version__, "session providers", sess.get_providers(), flush=True)
+if sess.get_providers()[0] != "CUDAExecutionProvider":
+    print("RTOD_FATAL phase=preflight CUDA provider did not load (wrong CUDA/cuDNN for this onnxruntime-gpu?)", flush=True)
+    sys.exit(3)
 PY
   phase fetch "models from the Hub, FP16 conversion"
   (cd "$M" && python3 - <<'PY'
