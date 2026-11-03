@@ -47,6 +47,7 @@ from indah import (
     Segmented,
     Session,
     Signal,
+    Slider,
     Stat,
     Text,
     create_app,
@@ -58,6 +59,7 @@ ASSETS = Path(__file__).with_name("yolox_traffic")
 ASSET_URL = "https://raw.githubusercontent.com/leejianrong/indah/main/examples/yolox_traffic"
 FPS_FLOOR = 8.0  # live below this for a few seconds falls back to replay
 RECORDED, LIVE = "Recorded", "Live"
+CONF = 0.3  # the score threshold the recording was made with; Live lets you move it
 LIVE_MAX_S = 30.0  # one live run lasts at most this long (the shared CPU's burst credit is finite)
 BUDGET_MS = 1000 / 30  # a frame takes under this to keep up with 30 fps video
 MODEL_REPO, MODEL_FILE = "jianlee/yolox-tiny-quantized", "yolox_tiny_ptq_int8_calib32.onnx"
@@ -146,7 +148,7 @@ def nms(boxes: Any, scores: Any, iou_thr: float) -> list[int]:
 
 
 def decode(
-    raw: Any, ratio: float, shape: tuple[int, ...], conf: float = 0.3, iou: float = 0.45
+    raw: Any, ratio: float, shape: tuple[int, ...], conf: float = CONF, iou: float = 0.45
 ) -> list[list[float]]:
     """Rows [cx, cy, w, h, obj, 80 class scores] to [x, y, w, h, class, score], as fractions."""
     import numpy as np
@@ -179,10 +181,10 @@ class Model:
         opts.intra_op_num_threads = 1
         self.session = ort.InferenceSession(path, opts, providers=["CPUExecutionProvider"])
 
-    def detect(self, bgr: Any) -> list[list[float]]:
+    def detect(self, bgr: Any, conf: float = CONF) -> list[list[float]]:
         blob, ratio = letterbox(bgr)
         (out,) = self.session.run(None, {"images": blob})
-        return decode(out[0], ratio, bgr.shape)
+        return decode(out[0], ratio, bgr.shape, conf)
 
 
 _model: Model | None = None
@@ -269,6 +271,8 @@ class Player:
         )
         self.badge = Signal("starting")  # the status line under the controls
         self.mode = Signal(RECORDED)  # the Segmented control; "Live" asks for the model
+        self.conf = Signal(CONF)  # the threshold slider: free in Live, read-only when recorded
+        self.conf_note = Signal("")
         self.asking = False
         self.latencies: deque[float] = deque(maxlen=60)
         self.finished: list[float] = []
@@ -285,8 +289,14 @@ class Player:
         self.live = live
         self.mode.set(LIVE if live else RECORDED)
         hw = self.clip.meta["recorded_on"]
+        self.conf.set(CONF)
+        self.conf_note.set(
+            "drag to change"
+            if live
+            else "fixed at 0.30 in the recording; switch to Live to change it"
+        )
         if live:
-            self.badge.set(f"Live: running the model on this server (up to {LIVE_MAX_S:.0f} s)")
+            self.badge.set("")  # the control already says Live
         elif reason:
             self.badge.set(f"Replay ({reason}): recorded on {hw}")
         else:
@@ -318,6 +328,8 @@ class Player:
         elif not want and self.live:
             SLOT.release(self)
             self.set_mode(False)
+        elif not self.live and self.conf.value != CONF:
+            self.conf.set(CONF)  # read-only: a drag in the recording snaps back
 
     async def display(self) -> None:
         last = -1
@@ -347,7 +359,7 @@ class Player:
         if self.live and self.model is not None:
             bgr = self.clip.array_bgr(i)
             t0 = time.perf_counter()
-            rows = await asyncio.to_thread(self.model.detect, bgr)
+            rows = await asyncio.to_thread(self.model.detect, bgr, float(self.conf.value))
             return rows, (time.perf_counter() - t0) * 1e3
         ms = self.recorded_ms[i]
         await asyncio.sleep(ms / 1e3)
@@ -413,16 +425,29 @@ def page(p: Player) -> Column:
     )  # fmt: skip
     return Column(
         [
-            Text("YOLOX-Tiny, INT8, on a traffic clip it was never trained on", variant="title"),
-            Segmented(p.mode, options=[RECORDED, LIVE], tones={LIVE: "ok"}, label="Boxes from"),
-            Grid([video, stats], columns="minmax(0, 700px) 1fr"),
+            Text("Real-Time Object Detection with YOLOX-Tiny (INT8)", variant="title"),
             Text(
-                "Recorded: boxes and timings computed earlier by this same model on these same "
-                "frames. "
-                "Live: this server runs the model now, up to 30 s, one visitor at a time. "
-                "Boxes update when a frame finishes, so a slow server trails the video.",
+                "This is a quantized YOLOX-Tiny (INT8), calibrated after training. This is the "
+                "model's first time seeing this clip: it is not in the training set.",
                 variant="caption",
             ),
+            Grid(
+                [
+                    Segmented(
+                        p.mode, options=[RECORDED, LIVE], tones={LIVE: "ok"}, label="Boxes from"
+                    ),
+                    Column(
+                        [
+                            Slider(
+                                p.conf, min=0.05, max=0.9, step=0.05, label="Confidence threshold"
+                            ),
+                            Text(p.conf_note, variant="caption"),
+                        ]
+                    ),
+                ],
+                columns=2,
+            ),
+            Grid([video, stats], columns="minmax(0, 700px) 1fr"),
             Text(
                 "Clip: 'Road traffic in Ljubljana' by Sounds of Changes, CC BY 3.0 "
                 "(first 15 s, downscaled). Model: YOLOX-Tiny (Megvii, Apache-2.0), INT8.",

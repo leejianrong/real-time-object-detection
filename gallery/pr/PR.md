@@ -7,10 +7,12 @@
 `examples/yolox_traffic.py` plus `examples/yolox_traffic/` (clip frames, recorded detections, attribution),
 a catalog entry, a thumbnail, the Colab notebook, a test, the build-script lines and a CHANGELOG line.
 
-A 15-second road-traffic clip loops with live boxes, an fps readout and a per-frame latency strip. The page opens
-on a **replay** (recorded detections from the same model on the same frames). **Run live on this server** runs the
-INT8 YOLOX-Tiny here for up to 30 s, one visitor at a time; a run that turns out too slow drops back to the replay.
-A segmented control (Recorded | Live) picks which one you see, and a status line says which it is and why. No uploads, no camera, no OpenCV (frames are bundled JPEGs; Pillow
+A 15-second road-traffic clip loops with boxes, an fps readout and a per-frame latency strip. A **Recorded | Live**
+control picks where the boxes come from. The page opens on **Recorded** (detections computed earlier by the same
+model on the same frames). **Live** runs the INT8 YOLOX-Tiny on this server for up to 30 s, one visitor at a time; a
+run that turns out too slow, or a busy server, drops back to Recorded and says why. A confidence-threshold slider is
+fixed on the recording and free in Live, where lowering it shows boxes no recording contains, which is how a visitor
+can tell the model is really running. No uploads, no camera, no OpenCV (frames are bundled JPEGs; Pillow
 and numpy do the rest).
 
 ## Why replay is the default (measured, not assumed)
