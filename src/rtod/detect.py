@@ -6,6 +6,7 @@ pixels; decode and NMS live here in numpy so results are comparable across runti
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
@@ -85,18 +86,45 @@ def postprocess(
     return Detections(boxes[keep], scores[keep].astype(np.float32), cls[keep].astype(np.int64))
 
 
+def _providers(device: str) -> list[str]:
+    """Providers for `device` ("cpu" or "cuda"); a missing CUDA falls back to CPU with a warning."""
+    import onnxruntime as ort
+
+    if device == "cuda":
+        if "CUDAExecutionProvider" in ort.get_available_providers():
+            return ["CUDAExecutionProvider", "CPUExecutionProvider"]
+        warnings.warn(
+            "CUDAExecutionProvider is not available (install onnxruntime-gpu on a GPU runtime); "
+            "running on the CPU instead",
+            stacklevel=3,
+        )
+    elif device != "cpu":
+        raise ValueError(f"device must be 'cpu' or 'cuda', got {device!r}")
+    return ["CPUExecutionProvider"]
+
+
 class OrtDetector:
-    """ONNX Runtime CPU backend. `threads` pins intra-op threads for benchmarking."""
+    """ONNX Runtime backend. `threads` pins CPU intra-op threads for benchmarking.
+
+    `device="cuda"` uses the CUDA provider when onnxruntime-gpu is installed, else warns and runs
+    on the CPU; `providers` (read it to check where it ran) lists what the session actually uses.
+    """
 
     def __init__(
-        self, model: Path, threads: int | None = None, conf: float = 0.25, iou: float = 0.45
+        self,
+        model: Path,
+        threads: int | None = None,
+        conf: float = 0.25,
+        iou: float = 0.45,
+        device: str = "cpu",
     ) -> None:
         import onnxruntime as ort
 
         opts = ort.SessionOptions()
         if threads:
             opts.intra_op_num_threads = threads
-        self._sess = ort.InferenceSession(str(model), opts, providers=["CPUExecutionProvider"])
+        self._sess = ort.InferenceSession(str(model), opts, providers=_providers(device))
+        self.providers: list[str] = self._sess.get_providers()
         self._conf, self._iou = conf, iou
 
     def run_raw(self, blob: F32) -> F32:

@@ -19,6 +19,7 @@ torch = ["torch>=2.4", "onnx>=1.16"]
 coco = ["pycocotools>=2.0.8"]
 plot = ["matplotlib>=3.8", "tensorboard>=2.16"]
 prune = ["torch-pruning>=1.5"]
+fp16 = ["onnxconverter-common>=1.14"]
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.11", "pip-audit>=2.7", "matplotlib>=3.8"]
@@ -43,7 +44,7 @@ files = ["src"]
 exclude = ["src/rtod/_yolox"]
 
 [[tool.mypy.overrides]]
-module = ["torch.*", "onnx.*", "onnxruntime.*", "cv2.*", "pycocotools.*", "matplotlib.*", "tensorboard.*", "torch_pruning.*"]
+module = ["torch.*", "onnx.*", "onnxruntime.*", "cv2.*", "pycocotools.*", "matplotlib.*", "tensorboard.*", "torch_pruning.*", "onnxconverter_common.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
