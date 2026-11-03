@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-REF = "main"  # pinned to a release tag by the release step (REA-30)
+REF = "v0.1.0"  # the notebook installs and fetches results from this release; bump on release
 OUT = Path(__file__).with_name("rtod_showcase.ipynb")
 
 CELLS: list[tuple[str, str]] = []
