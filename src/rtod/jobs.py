@@ -36,6 +36,7 @@ class JobSpec:
     offers: tuple[tuple[str, str], ...]
     max_hourly_usd: float
     max_hours: float  # hard lifetime ceiling baked into the pod
+    min_ram_gb: int = 16  # rp terminates a pod with less; the GPU benchmark needs far less
 
     @property
     def worst_case_usd(self) -> float:
@@ -68,7 +69,10 @@ class Ledger:
 
 
 # RunPod words "no capacity" at least two ways: "...currently available" and "no longer any ...".
-NO_STOCK = re.compile(r"no (longer any )?instances (currently )?available", re.I)
+# Offers worth skipping: out of stock, or a pod that came up with too little RAM (rp terminates it)
+NO_STOCK = re.compile(
+    r"no (longer any )?instances (currently )?available|pod had \d+ GB RAM <", re.I
+)
 RAW = "https://raw.githubusercontent.com/leejianrong/real-time-object-detection"
 
 
@@ -371,7 +375,7 @@ class RpProvider:
             "RP_CLOUD_TYPE": cloud,
             "RP_INTERRUPTIBLE": "false",  # spot pods are no longer offered (runpod-jobs skill)
             "RP_CONTAINER_DISK_GB": "40",
-            "RP_MIN_RAM_GB": "16",
+            "RP_MIN_RAM_GB": str(spec.min_ram_gb),
             "RP_GPU_TYPE": gpus,
             "RP_MAX_HOURLY_USD": str(spec.max_hourly_usd),
             "RP_MAX_LIFETIME_SECS": str(int(spec.max_hours * 3600)),
@@ -398,7 +402,7 @@ class RpProvider:
                 except JobFailed as e:
                     if not NO_STOCK.search(str(e)):
                         raise
-                    print(f"[job:warn] no stock: {cloud} {gpus}", flush=True)
+                    print(f"[job:warn] no stock or too little RAM: {cloud} {gpus}", flush=True)
                     continue
                 print(f"[job] pod {self.pod_id} created ({cloud}: {gpus})", flush=True)
                 return
