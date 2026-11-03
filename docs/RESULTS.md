@@ -156,6 +156,23 @@ accuracy on `val_test` (`results/gpu/`). FP16 is the FP32 graph converted with t
   are about a fifth of the end-to-end time.
 - Numbers are one GPU and one library stack. Do not compare them with the CPU table.
 
+### TensorRT: rejected our INT8 graphs
+
+With TensorRT 10.9.0.34 through onnxruntime-gpu 1.22 (a first attempt with TensorRT 11 could not
+load at all: the execution provider wants the 10.x libraries), the engine build failed for every
+variant, for reasons that are specific and fixable (`results/gpu/tensorrt-errors.txt`):
+
+- **Both INT8 graphs:** TensorRT requires bias tensors to stay float, and ONNX Runtime's QDQ
+  quantizer also wrapped the biases in DequantizeLinear (`head.cls_preds.0.bias_DequantizeLinear:
+  only activation types allowed as input`). It also wants symmetric INT8 activations, and ours are
+  asymmetric UINT8. A TensorRT-friendly export (`QuantizeBias: False`, `QInt8` activations with
+  symmetric ranges) is the likely fix; we did not build it, so **no TensorRT INT8 number exists**.
+- **FP32 with INT8 and FP16 both enabled:** "calibration failure, no scaling factors": INT8 must be
+  off for an unquantized model. FP16 alone through TensorRT was not run.
+
+So on the GPU, FP16 through the CUDA provider is the measured winner, and INT8's GPU speedup stays
+unproven here.
+
 ## Caveats
 
 - Differences below about 1 point between two models are not significant at this sample size.
