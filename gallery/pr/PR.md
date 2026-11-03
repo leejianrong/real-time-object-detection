@@ -29,19 +29,29 @@ Below 8 fps sustained means replay by default; the 30 s cap keeps a live run fro
 demos need. (Measured on its own machine, not inside the full gallery process: memory headroom and CPU sharing with the
 other demos are unmeasured, so one re-measure after this merges would close that.) The app was destroyed afterwards.
 
-## Gallery rule
+## Gallery rule (the owner's call)
 
-The catalog says demos are model-free with bounded work per session. This one runs a model, so it needs an explicit
-amendment: the model is 5.6 MB and downloaded once (prefetched in the image, like the SSD demo's); inference is bounded
-by a global one-holder slot, a 30 s cap per live run and a fallback to replay; there are no uploads. Suggested wording
-for `docs/GALLERY-APPS-NEXT.md`: "A demo may run a model if it is small, fetched at build time, bounded by a global slot
-and has a recorded fallback."
+`docs/GALLERY-APPS-NEXT.md` said each app is model-free, needs no network at run time and has bounded work per
+session. That was already out of date (`object_detection` and `upload_classify` run ONNX models), and this demo runs
+one too, so the PR amends that line instead of relaxing it silently: "A demo may run a model if it is small, fetched
+at image build time (the Hugging Face cache is baked into the image and pinned to a commit), bounded by a global
+slot, and has a recorded fallback." Reword it, or turn it into an ADR, if you prefer. "No network at run time" holds
+only because the image prefetches the model; the download is pinned to a Hub commit and the file is checked against
+the checksum the recording was made with.
+
+## Cost of Recorded sessions
+
+Measured on a laptop (13th Gen Intel i7-13620H), not on Fly, so only the ratios mean anything: one Recorded session
+costs about 5% of a core and 62 MB; five cost about 23% of a core and 76 MB. Every session pushes about 12 frames a
+second, which is where the CPU goes. The clip and the encoded frames are shared by all sessions (before that fix, five
+sessions held 109 MB). It has not been measured on the Fly box with the other demos running.
 
 ## Checks run
 
 - On a clone of indah with the bundle applied: the whole unit and integration suite, **1830 passed, 5 skipped**.
-- The example's own tests (12, no network): slot grants one holder and queues nobody, only the holder can release it,
-  fallback reasons, the slow-server fallback, the 30 s cap, a missing model, a session closing frees the slot, the
+- The example's own tests (about 25, no network): slot grants one holder and queues nobody, only the holder can release it,
+  fallback reasons, the slow-server fallback, the 30 s cap, a missing model, a model error frees the slot and falls back, the class names are the 80 COCO classes, one shared clip, the
+  pinned download, a session closing frees the slot, the
   asset download when only the `.py` file is copied, and the demo serving under a sub-path mount with a strict CSP.
 - Replay honesty: recorded boxes equal the live model's on the same frames within IoU 0.9 (runs in the source repo,
   which holds the model; not part of the indah test).

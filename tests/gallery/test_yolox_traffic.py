@@ -321,6 +321,122 @@ def test_a_live_run_ends_after_its_time_cap_and_frees_the_slot(monkeypatch):
     asyncio.run(run())
 
 
+# ---- review follow-ups: labels, a failing model, shared state, a pinned download ---------------
+def test_the_class_names_are_the_80_coco_classes():
+    assert len(ex.COCO) == 80
+    assert ex.COCO[0] == "person" and ex.COCO[10] == "fire hydrant" and ex.COCO[11] == "stop sign"
+    assert ex.COCO[-1] == "toothbrush" and len(set(ex.COCO)) == 80
+
+
+class BrokenModel:
+    def detect(self, bgr, conf=0.3):
+        raise RuntimeError("bad frame")
+
+
+def test_a_model_error_frees_the_slot_and_falls_back_instead_of_killing_the_loop(monkeypatch):
+    monkeypatch.setattr(ex, "load_model", lambda: BrokenModel())
+
+    async def run():
+        ctx = FakeCtx()
+        ex.build_session(ctx)
+        p = player_of(ctx)
+        await p.go_live()
+        assert p.live
+        await until(lambda: not p.live, seconds=4)
+        assert "model error" in p.badge.value and not ex.SLOT.held
+        await asyncio.sleep(0.3)
+        assert not ctx.tasks[1].done()  # the run loop is still alive, now replaying
+        ctx.close()
+
+    asyncio.run(run())
+
+
+def test_a_run_of_very_slow_frames_falls_back_even_below_one_fps(monkeypatch):
+    monkeypatch.setattr(ex, "load_model", lambda: StubModel(ms=300))
+    monkeypatch.setattr(ex, "SLOW_FRAME_MS", 100.0)  # stands in for "over a second a frame"
+
+    async def run():
+        ctx = FakeCtx()
+        ex.build_session(ctx)
+        p = player_of(ctx)
+        await p.go_live()
+        await until(lambda: not p.live, seconds=4)
+        assert "slow" in p.badge.value and not ex.SLOT.held
+        ctx.close()
+
+    asyncio.run(run())
+
+
+def test_sessions_share_one_clip():
+    a, b = FakeCtx(), FakeCtx()
+
+    async def run():
+        ex.build_session(a)
+        ex.build_session(b)
+        assert player_of(a).clip is player_of(b).clip is ex.get_clip()
+        a.close()
+        b.close()
+
+    asyncio.run(run())
+
+
+def test_a_frame_is_encoded_once_not_per_visitor():
+    clip = ex.get_clip()
+    assert clip.uri(3) is clip.uri(3)
+
+
+def test_two_clicks_load_the_model_once(monkeypatch, tmp_path):
+    import threading
+
+    made = []
+
+    class Counting:
+        def __init__(self, path):
+            time.sleep(0.2)
+            made.append(path)
+
+    f = tmp_path / "m.onnx"
+    f.write_bytes(b"x")
+    monkeypatch.setenv("YOLOX_TRAFFIC_MODEL", str(f))
+    monkeypatch.setattr(ex, "Model", Counting)
+    monkeypatch.setattr(ex, "_model", None)
+    threads = [threading.Thread(target=ex.load_model) for _ in range(3)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert len(made) == 1
+
+
+def test_the_download_is_pinned_to_a_commit_and_checked_against_the_recording(
+    monkeypatch, tmp_path, caplog
+):
+    import sys
+    import types
+
+    seen = {}
+    wrong = tmp_path / "other.onnx"
+    wrong.write_bytes(b"not the model the replay was recorded with")
+
+    def fake_download(repo, filename, **kw):
+        seen.update(repo=repo, filename=filename, **kw)
+        return str(wrong)
+
+    monkeypatch.delenv("YOLOX_TRAFFIC_MODEL", raising=False)
+    monkeypatch.setitem(
+        sys.modules, "huggingface_hub", types.SimpleNamespace(hf_hub_download=fake_download)
+    )
+    monkeypatch.setattr(ex, "_model", None)
+    with caplog.at_level("WARNING"):
+        assert ex.load_model() is None  # a different file than the recording used: not served
+    assert seen["revision"] == ex.MODEL_REVISION and len(ex.MODEL_REVISION) == 40
+    assert "checksum" in caplog.text
+
+
+def test_the_page_credit_links_the_source_and_the_licence():
+    text = json.dumps(ex.Session(ex.page(ex.Player(ex.Clip()))).snapshot())
+    assert "https://commons.wikimedia.org/wiki/File:Road_traffic_in_Ljubljana.webm" in text
+    assert "https://creativecommons.org/licenses/by/3.0/" in text
+
+
 # ---- honesty: replay equals what the real model says on the same frames ------------------------
 def iou(a, b):
     ax2, ay2, bx2, by2 = a[0] + a[2], a[1] + a[3], b[0] + b[2], b[1] + b[3]
@@ -340,6 +456,12 @@ def test_replay_boxes_match_the_live_model_on_the_same_frames():
         assert len(live) == len(recorded)
         for box in recorded:
             assert max(iou(box, other) for other in live if other[4] == box[4]) >= 0.9
+
+
+def test_the_class_names_match_the_rtod_list():
+    from rtod.coco_names import COCO_NAMES
+
+    assert tuple(ex.COCO) == tuple(COCO_NAMES)
 
 
 # ---- mounting: the gallery serves each demo under /<slug>, with a strict CSP -------------

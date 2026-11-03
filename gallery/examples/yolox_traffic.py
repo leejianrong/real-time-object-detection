@@ -26,11 +26,14 @@ Run it with:  python examples/yolox_traffic.py"""
 
 import asyncio
 import base64
+import functools
+import hashlib
 import io
 import json
 import logging
 import os
 import tempfile
+import threading
 import time
 import urllib.request
 from collections import deque
@@ -60,23 +63,97 @@ ASSET_URL = "https://raw.githubusercontent.com/leejianrong/indah/main/examples/y
 FPS_FLOOR = 8.0  # live below this for a few seconds falls back to replay
 RECORDED, LIVE = "Recorded", "Live"
 CONF = 0.3  # the score threshold the recording was made with; Live lets you move it
+SLOW_FRAME_MS, SLOW_STREAK = 1000.0, 3  # this many frames in a row over this: under 1 fps, give up
 LIVE_MAX_S = 30.0  # one live run lasts at most this long (the shared CPU's burst credit is finite)
 BUDGET_MS = 1000 / 30  # a frame takes under this to keep up with 30 fps video
 MODEL_REPO, MODEL_FILE = "jianlee/yolox-tiny-quantized", "yolox_tiny_ptq_int8_calib32.onnx"
+# A commit of the Hub repo, so a later push there cannot change the model that is served. The
+# build script prefetches the same revision; the file is also checked against replay.json.
+MODEL_REVISION = "d79a175adba2a5a0201803054fa74f7438fdcf63"
 COLORS = {"car": "#3fb6c4", "truck": "#e9a23b", "bus": "#c77dd6", "person": "#7fd36b"}
 
 COCO = (
-    "person,bicycle,car,motorcycle,airplane,bus,train,truck,boat,traffic light,fire,"
-    "hydrant,stop sign,parking,"
-    "meter,bench,bird,cat,dog,horse,sheep,cow,elephant,bear,zebra,giraffe,backpack,umbrella,handbag,tie,suitcase,frisbee,skis,snowboard,sports,"
-    "ball,kite,baseball bat,baseball glove,skateboard,surfboard,tennis,"
-    "racket,bottle,wine,"
-    "glass,cup,fork,knife,spoon,bowl,banana,apple,sandwich,orange,broccoli,carrot,hot,"
-    "dog,pizza,donut,cake,chair,couch,potted plant,bed,dining,"
-    "table,toilet,tv,laptop,mouse,remote,keyboard,cell,"
-    "phone,microwave,oven,toaster,sink,refrigerator,book,clock,vase,scissors,teddy,"
-    "bear,hair drier,toothbrush"
-).split(",")
+    "person",
+    "bicycle",
+    "car",
+    "motorcycle",
+    "airplane",
+    "bus",
+    "train",
+    "truck",
+    "boat",
+    "traffic light",
+    "fire hydrant",
+    "stop sign",
+    "parking meter",
+    "bench",
+    "bird",
+    "cat",
+    "dog",
+    "horse",
+    "sheep",
+    "cow",
+    "elephant",
+    "bear",
+    "zebra",
+    "giraffe",
+    "backpack",
+    "umbrella",
+    "handbag",
+    "tie",
+    "suitcase",
+    "frisbee",
+    "skis",
+    "snowboard",
+    "sports ball",
+    "kite",
+    "baseball bat",
+    "baseball glove",
+    "skateboard",
+    "surfboard",
+    "tennis racket",
+    "bottle",
+    "wine glass",
+    "cup",
+    "fork",
+    "knife",
+    "spoon",
+    "bowl",
+    "banana",
+    "apple",
+    "sandwich",
+    "orange",
+    "broccoli",
+    "carrot",
+    "hot dog",
+    "pizza",
+    "donut",
+    "cake",
+    "chair",
+    "couch",
+    "potted plant",
+    "bed",
+    "dining table",
+    "toilet",
+    "tv",
+    "laptop",
+    "mouse",
+    "remote",
+    "keyboard",
+    "cell phone",
+    "microwave",
+    "oven",
+    "toaster",
+    "sink",
+    "refrigerator",
+    "book",
+    "clock",
+    "vase",
+    "scissors",
+    "teddy bear",
+    "hair drier",
+    "toothbrush",
+)
 
 
 # ---- the clip: JPEG frames bundled in one file, so no video decoder is needed ------------------
@@ -99,12 +176,18 @@ class Clip:
         blob = (folder / "frames.bin").read_bytes()
         self.meta, self.fps = meta, meta["fps"]
         self.frames = [blob[o : o + n] for o, n in meta["frames"]]
+        self._uris: list[str | None] = [None] * len(self.frames)
 
     def __len__(self) -> int:
         return len(self.frames)
 
     def uri(self, i: int) -> str:
-        return "data:image/jpeg;base64," + base64.b64encode(self.frames[i]).decode("ascii")
+        """The frame as a data URI, encoded once and shared by every visitor."""
+        if self._uris[i] is None:
+            self._uris[i] = "data:image/jpeg;base64," + base64.b64encode(self.frames[i]).decode(
+                "ascii"
+            )
+        return self._uris[i]  # type: ignore[return-value]
 
     def array_bgr(self, i: int) -> Any:
         import numpy as np
@@ -112,6 +195,12 @@ class Clip:
 
         rgb = np.asarray(Image.open(io.BytesIO(self.frames[i])).convert("RGB"))
         return rgb[:, :, ::-1]  # the model was trained on BGR
+
+
+@functools.cache
+def get_clip() -> Clip:
+    """One read-only Clip for the whole process: 4 MB of frames, not one copy per visitor."""
+    return Clip()
 
 
 # ---- the model: letterbox, run, decode, per-class NMS (numpy only, no OpenCV) ------------------
@@ -188,23 +277,31 @@ class Model:
 
 
 _model: Model | None = None
+_model_lock = threading.Lock()
 
 
 def load_model() -> Model | None:
     """The shared model, loaded once; None if it cannot be (then everyone gets the replay)."""
     global _model
-    if _model is None:
-        try:
-            path = os.environ.get("YOLOX_TRAFFIC_MODEL")
-            if not path:
-                from huggingface_hub import hf_hub_download
+    with _model_lock:  # two clicks at once download and build it once
+        if _model is None:
+            try:
+                path = os.environ.get("YOLOX_TRAFFIC_MODEL")
+                if not path:
+                    from huggingface_hub import hf_hub_download
 
-                path = hf_hub_download(MODEL_REPO, MODEL_FILE)
-            _model = Model(path)
-        except Exception:
-            log.warning("model unavailable, serving the replay only", exc_info=True)
-            return None
-    return _model
+                    path = hf_hub_download(MODEL_REPO, MODEL_FILE, revision=MODEL_REVISION)
+                    want = get_clip().meta["model"]["sha256"]
+                    if hashlib.sha256(Path(path).read_bytes()).hexdigest() != want:
+                        log.warning(
+                            "model checksum differs from the one the replay was recorded with"
+                        )
+                        return None
+                _model = Model(path)
+            except Exception:
+                log.warning("model unavailable, serving the replay only", exc_info=True)
+                return None
+        return _model
 
 
 # ---- bounded work: one live holder at a time ---------------------------------------------------
@@ -274,6 +371,7 @@ class Player:
         self.conf = Signal(CONF)  # the threshold slider: free in Live, read-only when recorded
         self.conf_note = Signal("")
         self.asking = False
+        self.slow_streak = 0
         self.latencies: deque[float] = deque(maxlen=60)
         self.finished: list[float] = []
         self.t0 = time.monotonic()
@@ -289,6 +387,7 @@ class Player:
         self.live = live
         self.mode.set(LIVE if live else RECORDED)
         hw = self.clip.meta["recorded_on"]
+        self.slow_streak = 0
         self.conf.set(CONF)
         self.conf_note.set(
             "drag to change"
@@ -366,9 +465,24 @@ class Player:
         return self.recorded[i], ms
 
     async def run(self) -> None:
+        try:
+            await self._run()
+        finally:
+            SLOT.release(self)  # however this task ends, it cannot keep the slot
+
+    async def _run(self) -> None:
         while True:
             i = self.index()
-            rows, ms = await self.infer_once(i)
+            try:
+                rows, ms = await self.infer_once(i)
+            except Exception:
+                if not self.live:
+                    raise
+                log.exception("live inference failed; back to the replay")
+                SLOT.release(self)
+                self.set_mode(False, "model error")
+                await asyncio.sleep(0)
+                continue
             now = time.monotonic()
             self.latencies.append(ms)
             self.finished = [t for t in self.finished if now - t <= 10] + [now]
@@ -378,7 +492,8 @@ class Player:
             self.p50.set(f"{percentile(list(self.latencies), 0.5):.0f}")
             self.p95.set(f"{percentile(list(self.latencies), 0.95):.0f}")
             self.fps.set(str(sum(1 for t in self.finished if now - t <= 1.0)))
-            if self.live and too_slow(self.finished, now):
+            self.slow_streak = self.slow_streak + 1 if ms > SLOW_FRAME_MS else 0
+            if self.live and (too_slow(self.finished, now) or self.slow_streak >= SLOW_STREAK):
                 SLOT.release(self)
                 self.set_mode(False, f"slow: under {FPS_FLOOR:.0f} fps")
             elif self.live and now > self.live_until:
@@ -449,16 +564,20 @@ def page(p: Player) -> Column:
             ),
             Grid([video, stats], columns="minmax(0, 700px) 1fr"),
             Text(
-                "Clip: 'Road traffic in Ljubljana' by Sounds of Changes, CC BY 3.0 "
-                "(first 15 s, downscaled). Model: YOLOX-Tiny (Megvii, Apache-2.0), INT8.",
-                variant="caption",
+                "Clip: [Road traffic in Ljubljana]"
+                "(https://commons.wikimedia.org/wiki/File:Road_traffic_in_Ljubljana.webm) by "
+                "Sounds of Changes, "
+                "[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/) "
+                "(first 15 s, downscaled). Model: YOLOX-Tiny (Megvii, Apache-2.0), INT8, "
+                "[weights and licence](https://huggingface.co/jianlee/yolox-tiny-quantized).",
+                markdown=True,
             ),
         ]
     )
 
 
 def build_session(ctx: Any) -> Session:
-    player = Player(Clip())
+    player = Player(get_clip())
     player.set_mode(False)
     ctx.on_close(lambda: SLOT.release(player))  # a closed or abandoned tab frees the slot
     ctx.spawn(player.display())
