@@ -26,20 +26,20 @@ def code(text: str) -> None:
 
 
 md("""
-# Making YOLOX-Tiny small and fast: quantization, QAT and what we measured
+# Making YOLOX-Tiny small and fast: quantization, QAT, pruning and what we measured
 
 [YOLOX-Tiny](https://github.com/Megvii-BaseDetection/YOLOX) (Apache-2.0) detects 80 kinds of
 objects at 416 px. This notebook shrinks it with **INT8 quantization** (post-training and
-quantization-aware training), measures what that costs in accuracy and buys in speed, and runs the
-variants on a real traffic clip.
+quantization-aware training) and **structured pruning**, measures what each costs in accuracy and buys
+in speed, size and memory on a CPU and a GPU, and runs the variants live on a real traffic clip.
 
 Everything heavy (training on a GPU) was done ahead of time on RunPod. This notebook downloads
 the published models and the benchmark results, so it runs on a **free CPU runtime in a few
 minutes**. All code lives in [real-time-object-detection](https://github.com/leejianrong/real-time-object-detection).
 
 The honest headline: quantization gives a 2.5x CPU speed-up and a 3.6x smaller file for under one
-point of mAP, but **well-calibrated post-training quantization is as accurate as quantization-aware
-training here**, and that is the more useful thing to know.
+point of mAP. **Well-calibrated post-training quantization is as accurate as quantization-aware
+training here**, and **pruning costs far more accuracy than quantization** at the training budget we had.
 """)
 
 md("## 1. Set up")
@@ -47,7 +47,7 @@ code(f"""
 import importlib.util
 
 if importlib.util.find_spec("rtod") is None:  # Colab: install from GitHub; locally it is already there
-    %pip install -q "rtod[onnx] @ git+https://github.com/leejianrong/real-time-object-detection@{REF}" matplotlib
+    %pip install -q "rtod[onnx,fp16,demo] @ git+https://github.com/leejianrong/real-time-object-detection@{REF}" matplotlib
 """)
 code(f"""
 import json, urllib.request
@@ -61,6 +61,10 @@ from rtod.hub import fetch_model
 
 REF = "{REF}"
 RAW = f"https://raw.githubusercontent.com/leejianrong/real-time-object-detection/{{REF}}"
+def fetch_json(path):
+    with urllib.request.urlopen(f"{{RAW}}/{{path}}") as r:
+        return json.load(r)
+
 LIVE_TRAIN = False  # True re-runs QAT here (needs a GPU runtime, about 5 minutes, see section 4)
 
 MODELS = {{name: fetch_model(name) for name in ("fp32", "ptq-int8", "qat-int8")}}
@@ -152,7 +156,43 @@ else:
 )
 
 md("""
-## 5. Results on held-out images
+## 5. Pruning
+
+Pruning removes whole channels from the network, so the model gets genuinely smaller and faster in
+ordinary dense kernels (zeroing individual weights would not). `rtod prune` uses
+[torch-pruning](https://github.com/VainF/Torch-Pruning) to remove the least important channels of every
+layer, keeps the 80 + 4 + 1 output channels, and rounds channel counts to a multiple of 16, because
+unaligned widths gave no CPU speedup at all.
+
+A pruned network is broken until it is retrained: both pruned models scored **0.00 mAP** straight after
+pruning. Our first recovery recipe (the gentle QAT one, learning rate 1e-5) left them at 0.00 too. Ordinary
+training (BatchNorm kept, learning rate 2.5e-3, weight decay, 6,000 steps on 10,000 images, about 0.8 of a
+COCO epoch) brought them back, partly:
+""")
+code("""
+dev = {n: fetch_json(f"results/prune-dev/yolox-tiny_{n}__ort-cpu__t1.json")
+       for n in ("fp32-devsession", "p30_std", "p50_std")}
+speed = {n: fetch_json(f"results/prune-final/yolox-tiny_{n}__ort-cpu__t1.json")
+         for n in ("fp32", "p30", "p50", "ptq-int8")}
+rows = [("FP32", "fp32-devsession", "fp32", "100%"),
+        ("Pruned 30%, recovered", "p30_std", "p30", "68%"),
+        ("Pruned 50%, recovered", "p50_std", "p50", "48%")]
+print(f"{'model':24s} {'MACs':>5s} {'mAP50-95 (val_dev)':>20s} {'latency':>9s} {'size':>8s} {'RAM added':>10s}")
+for name, d, s, macs in rows:
+    print(f"{name:24s} {macs:>5s} {dev[d]['map50_95']*100:9.2f} ± {dev[d]['map50_95_se']*100:.2f} "
+          f"{speed[s]['model_ms_p50']:7.1f} ms {speed[s]['size_bytes']/1e6:6.1f} MB {speed[s]['peak_rss_mb']:7.0f} MB")
+i = speed["ptq-int8"]
+print(f"{'INT8 PTQ, for comparison':24s} {'100%':>5s} {'(see section 6)':>20s} {i['model_ms_p50']:7.1f} ms "
+      f"{i['size_bytes']/1e6:6.1f} MB {i['peak_rss_mb']:7.0f} MB")
+""")
+md("""
+Pruning bought real speed (50% of the MACs removed gave 0.54x the latency) but cost a lot of accuracy
+at this training budget, and **INT8 quantization beats it on every axis**: faster, smaller and almost as accurate.
+With far more recovery training pruned models get closer, but we did not run that.
+""")
+
+md("""
+## 6. Results on held-out images
 
 Accuracy is COCO mAP50-95 on `val_test`, half of val2017 (2,476 images) that was never used to choose
 anything. `±` is a standard error from random 80% subsets, so differences under about one point are
@@ -197,7 +237,51 @@ ax.set_xlim(0, 150); ax.grid(alpha=0.3); ax.set_title("Accuracy against speed (u
 """)
 
 md("""
-## 6. Speed on your runtime
+## 7. GPU
+
+The same models on a GPU with ONNX Runtime's CUDA provider (one RTX 2000 Ada, batch 1, 500 timed runs;
+accuracy on `val_test`). FP16 is the FP32 graph converted to half precision with the box decode kept in float.
+""")
+code("""
+order = [("FP32", "fp32"), ("FP16", "fp16"), ("INT8 PTQ", "ptq-int8"), ("INT8 QAT", "qat-int8")]
+GPU = {name: fetch_json(f"results/gpu/yolox-tiny_{key}__ort-cuda__t1.json") for name, key in order}
+print(f"{'model':10s} {'mAP50-95':>14s} {'latency':>9s} {'end to end':>11s} {'size':>8s}")
+for name, r in GPU.items():
+    print(f"{name:10s} {r['map50_95']*100:7.2f} ± {r['map50_95_se']*100:.2f} {r['model_ms_p50']:7.2f} ms "
+          f"{r['e2e_ms_p50']:8.2f} ms {r['size_bytes']/1e6:6.1f} MB")
+print("GPU:", GPU["FP32"]["hardware"]["gpu"], "| ORT", GPU["FP32"]["hardware"]["onnxruntime"])
+""")
+md("""
+- **FP16 is the free win:** the same accuracy, lower latency, half the size.
+- **INT8 is slower than FP32 on this GPU runtime.** The plain CUDA provider has no INT8 convolution for
+  these graphs, so it dequantizes around float kernels. INT8 is a CPU win; on a GPU it needs TensorRT.
+- At 3 to 6 ms the model is no longer the bottleneck: image preprocessing and non-maximum suppression on the CPU
+  are about a fifth of the end-to-end time.
+
+Do you have a GPU runtime? This cell benchmarks here if so, and says what to do if not:
+""")
+code("""
+import shutil
+import onnxruntime as ort
+
+CUDA_OK = "CUDAExecutionProvider" in ort.get_available_providers()
+if CUDA_OK:
+    from rtod.bench import bench
+    from rtod.fp16 import to_fp16
+    fp16 = to_fp16(MODELS["fp32"], Path("yolox_tiny_fp16.onnx"))
+    for name, path in (("FP32", MODELS["fp32"]), ("FP16", fp16), ("INT8 PTQ", MODELS["ptq-int8"])):
+        r = bench(path, f"nb/{name}-cuda", warmup=20, iters=200, quick=True, device="cuda")
+        print(f"{name:9s} {r.model_ms_p50:6.2f} ms on {r.hardware.get('gpu')}")
+elif shutil.which("nvidia-smi"):
+    print("A GPU is attached but this onnxruntime has no CUDA provider. To try it, run "
+          "`pip uninstall -y onnxruntime && pip install onnxruntime-gpu`, restart the runtime, "
+          "and run the notebook again.")
+else:
+    print("No GPU on this runtime (Runtime > Change runtime type > GPU). The table above is the reference.")
+""")
+
+md("""
+## 8. Speed on your runtime
 
 The table above was measured on one laptop; numbers from different machines are not comparable.
 Here is the same benchmark on whatever this notebook is running on (single thread, 100 timed runs each).
@@ -215,7 +299,7 @@ print("hardware:", r.hardware["cpu"])
 """)
 
 md("""
-## 7. FP32 against INT8 on the traffic clip
+## 9. FP32 against INT8 on the traffic clip
 
 The same frames through both models. INT8 should find nearly the same objects.
 """)
@@ -232,11 +316,33 @@ plt.tight_layout();
 """)
 
 md("""
+## 10. Watch it run
+
+Both models, one clip, live. The clip is road traffic that is **not in COCO**, so the model has never seen it.
+The left side is FP32; on the right, pick which INT8 variant to compare. Video plays at 15 frames per second and
+each model draws boxes for the frame that was current *when it started*, so a slower model's boxes trail the video.
+The dark part of each latency bar is time over the 33 ms a frame gets at 30 fps. Built with
+[indah](https://github.com/leejianrong/indah), which serves a live UI straight from a notebook cell.
+""")
+code("""
+from rtod.dashboard import Dashboard, launch_dashboard
+
+dash = Dashboard(
+    CLIP,
+    {"FP32": MODELS["fp32"], "INT8 PTQ": MODELS["ptq-int8"], "INT8 QAT": MODELS["qat-int8"]},
+    device="cuda" if CUDA_OK else "cpu",
+)
+handle = launch_dashboard(dash)
+""")
+
+md("""
 ## What to take away
 
 1. **Calibration moved accuracy more than training did.** Tune the number of calibration images before reaching for QAT.
 2. **INT8 is a real win on CPU:** about 2.5x faster and 3.6x smaller for under one point of mAP.
-3. **Measure everything with a standard error and a named machine.** Our first PTQ baseline was
+3. **Pruning is real but costly here; FP16 is free on a GPU.** Removing channels sped the CPU model up but needed
+   far more retraining than we ran. INT8 beat it on every axis, and on a GPU the easy win is FP16.
+4. **Measure everything with a standard error and a named machine.** Our first PTQ baseline was
    handicapped by over-calibration, which made QAT look better than it is. The earlier numbers are kept in the repo's
    `results/history/` for the record.
 
