@@ -1,0 +1,32 @@
+{
+  "variant": "yolox-tiny/ptq-int8",
+  "runtime": "ort-cpu",
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13620H",
+    "logical_cpus": 16,
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "python": "3.12.12",
+    "onnxruntime": "1.31.1"
+  },
+  "threads": 1,
+  "input_size": 416,
+  "warmup": 20,
+  "iters": 200,
+  "quick": false,
+  "model_ms_p50": 31.580192002365948,
+  "model_ms_p95": 49.35485844944196,
+  "e2e_ms_p50": 32.74561649959651,
+  "e2e_ms_p95": 50.84418004826148,
+  "fps": 30.538438633834303,
+  "size_bytes": 5593444,
+  "git_sha": "fe0c2de",
+  "map50_95": null,
+  "map50": null,
+  "map50_95_se": null,
+  "eval_subset": null,
+  "per_class_ap": null,
+  "peak_rss_mb": 65.953125,
+  "cpu_ms_per_inference": 35.69431263,
+  "cores_used": 0.9998226765842878,
+  "schema_version": 1
+}

@@ -108,6 +108,54 @@ in memory for them, which does not fit on an 8 GB machine.
 Where path A's advantage over the original PTQ came from: about 0.3 from quantizing only the convs,
 about 0.7 from tighter ranges, and 0.1 to 0.4 (inside the noise) from the QAT training itself.
 
+## Pruning (structured channels, then recovery training)
+
+`rtod prune` removes whole channels with torch-pruning (magnitude importance, channel counts rounded
+to 16; unaligned widths gave no CPU speedup at all), keeping the 80 + 4 + 1 output channels. Accuracy
+is on `val_dev` (2,476 images, so about 0.5 standard error); speed, size and memory are one CPU thread
+of the i7-13620H, measured back to back in one session (`results/prune-final/`).
+
+| Model | MACs kept | mAP50-95 (`val_dev`) | Latency | Size | Peak RAM added |
+|---|---|---|---|---|---|
+| FP32 | 100% | 32.81 ± 0.63 | 83.5 ms | 20.3 MB | 103 MB |
+| Pruned 30% of MACs, recovered | 68% | 18.44 ± 0.47 | 60.2 ms | 16.0 MB | 88 MB |
+| Pruned 50% of MACs, recovered | 48% | 12.39 ± 0.38 | 45.4 ms | 10.7 MB | 69 MB |
+| INT8 PTQ (for comparison) | 100% | 32.75 (`val_test`) | 31.6 ms | 5.6 MB | 66 MB |
+
+**Pruning costs real accuracy at the training budget we could afford, and INT8 beats it on every axis.**
+
+- Pruned models score **0.00 mAP before any training**, so recovery training is not optional.
+- The first recovery recipe (the QAT one: BatchNorm folded in, lr 1e-5, 1250 steps, about 0.17 of a COCO
+  epoch) left all five pruned models at 0.00 (`results/prune-dev/`): the loss only fell from 16 to 10.7
+  against 4.4 for the unpruned model.
+- Ordinary training fixed that (BatchNorm kept, lr 2.5e-3, weight decay 5e-4, warm-up, EMA 0.999, 6000
+  steps on the 10k subset, about 0.8 of a COCO epoch): 18.4 and 12.4 mAP. Training loss was back near the
+  original (4.0 against 4.4) but the held-out score is not, and 30% to 50% of the MACs is a lot to remove
+  from a model this small. Much longer training would close part of the gap; we did not run it.
+- The speedup is real but smaller than the MAC count suggests (50% of the MACs gave 0.54x the latency).
+  Peak memory falls modestly (103 to 69 MB), because most of it is the runtime, not the weights.
+- Pruned+QAT was not run (the recovered models are too far from FP32 for stacking to be worth it).
+
+## GPU (ONNX Runtime CUDA)
+
+One RTX 2000 Ada (driver 595.91.07, 16 GB), onnxruntime-gpu 1.22 with CUDA 12, batch 1, 500 timed runs,
+accuracy on `val_test` (`results/gpu/`). FP16 is the FP32 graph converted with the box decode kept in float.
+
+| Model | mAP50-95 | Latency (model only) | End to end | Size |
+|---|---|---|---|---|
+| FP32 | 33.47 ± 0.49 | 3.57 ms | 4.42 ms | 20.3 MB |
+| **FP16** | **33.47 ± 0.49** | **3.12 ms** | **3.94 ms** | **10.2 MB** |
+| INT8 PTQ (QDQ) | 32.83 ± 0.53 | 5.56 ms | 6.29 ms | 5.6 MB |
+| INT8 QAT (QDQ) | 32.75 ± 0.50 | 5.06 ms | 5.77 ms | 20.5 MB |
+
+- **FP16 is the free GPU win:** same accuracy, 13% lower latency, half the size.
+- **INT8 is slower than FP32 on the plain CUDA provider.** It has no INT8 convolution for these QDQ
+  graphs, so it dequantizes around float kernels and adds quantize/dequantize work. INT8 is a CPU win
+  (2.6x faster there) and only a GPU win through TensorRT.
+- At 3 to 6 ms a frame, the model is not the bottleneck on a GPU: preprocessing and NMS on the CPU
+  are about a fifth of the end-to-end time.
+- Numbers are one GPU and one library stack. Do not compare them with the CPU table.
+
 ## Caveats
 
 - Differences below about 1 point between two models are not significant at this sample size.
@@ -119,8 +167,8 @@ about 0.7 from tighter ranges, and 0.1 to 0.4 (inside the noise) from the QAT tr
   purpose; we did not search for one.
 - The training subset was already seen in the official weights' pretraining (it is part of
   train2017), so QAT here is recovery fine-tuning, not new learning.
-- GPU cost: eight short RunPod sessions on an RTX 2000 Ada at $0.24/h. The ledger (`results/spend.json`)
-  charges at a $0.40/h ceiling and shows $2.08 of the $5 cap; real spend is lower.
+- GPU cost: about a dozen short RunPod sessions (RTX 2000 Ada and 4000 Ada at $0.24/h). The ledger
+  (`results/spend.json`) charges at a $0.40/h ceiling; real spend is well under the $5 cap.
 
 ## Reproduce
 
