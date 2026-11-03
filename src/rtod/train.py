@@ -116,8 +116,16 @@ def qat_finetune(
     ema_decay: float = 0.999,
     fake_quant: bool = True,
     init: torch.nn.Module | None = None,
+    plain: bool = False,
+    warmup: int = 0,
+    weight_decay: float = 5e-4,
 ) -> torch.nn.Module:
     """Fine-tune and return the model (the EMA weights if `ema`).
+
+    `plain=True` is ordinary float training for recovering a pruned model: BatchNorm stays in the
+    network (no folding, no fake-quant), SGD with Nesterov momentum and weight decay on the conv
+    weights only, as in YOLOX. The folded QAT recipe needs lr <= 1e-5, which is far too gentle to
+    repair pruning damage (1250 steps at 1e-5 left a 30%-pruned model at 0.00 mAP).
 
     `fake_quant=False` runs the identical recipe as a plain float fine-tune: the control that
     separates "the recipe hurts the model" from "quantization noise hurts the model".
@@ -126,7 +134,8 @@ def qat_finetune(
     from rtod.models import load_official_weights
 
     seed_everything(seed)
-    model = prepare_qat(init if init is not None else load_official_weights())
+    base = init if init is not None else load_official_weights()
+    model = base if plain else prepare_qat(base)
     ds = CocoSubset(ids, split)
     loader = DataLoader(
         ds,
@@ -139,25 +148,36 @@ def qat_finetune(
 
     model.head.decode_in_inference = False
     model.to(device)
-    calibrate(model, (x.to(device) for x, _ in _take(loader, calib_batches)))
-    for m in (
-        model.modules()
-    ):  # weights keep changing, so their ranges keep tracking; activations stay frozen
-        if hasattr(m, "w_fq"):
-            m.w_fq.enable_observer()
+    if not plain:
+        calibrate(model, (x.to(device) for x, _ in _take(loader, calib_batches)))
+        for m in (
+            model.modules()
+        ):  # weights keep changing, so their ranges keep tracking; activations stay frozen
+            if hasattr(m, "w_fq"):
+                m.w_fq.enable_observer()
 
-    if not fake_quant:
-        set_fake_quant(model, False)
+        if not fake_quant:
+            set_fake_quant(model, False)
     averaged = Ema(model, ema_decay) if ema else None
     model.train()
     writer = MetricsWriter(metrics_dir) if metrics_dir else None
     t0 = time.monotonic()
-    opt = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    decay = [p for p in model.parameters() if p.ndim > 1] if plain else []
+    rest = [p for p in model.parameters() if p.ndim <= 1] if plain else list(model.parameters())
+    opt = torch.optim.SGD(
+        [{"params": decay, "weight_decay": weight_decay}, {"params": rest, "weight_decay": 0.0}]
+        if plain
+        else rest,
+        lr=lr,
+        momentum=0.9,
+        nesterov=plain,
+    )
     step = 0
     while step < steps:
         for x, y in loader:
             for g in opt.param_groups:
-                g["lr"] = lr * 0.5 * (1 + math.cos(math.pi * step / steps))
+                ramp = min(1.0, (step + 1) / warmup) if warmup else 1.0
+                g["lr"] = ramp * lr * 0.5 * (1 + math.cos(math.pi * step / steps))
             out: dict[str, Any] = model(x.to(device), y.to(device))
             opt.zero_grad()
             out["total_loss"].backward()

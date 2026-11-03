@@ -82,3 +82,22 @@ def test_qat_prune_macs_hands_a_pruned_model_to_the_fine_tune(monkeypatch, tmp_p
         ["qat", "--prune-macs", "0.4", "--no-fake-quant", "--no-ptq", "--out", str(tmp_path)]
     )
     assert rc == 0 and seen["macs"] < 0.8 * macs_params(base)[0]
+
+
+def test_plain_training_options_reach_the_fine_tune(monkeypatch, tmp_path):
+    pytest.importorskip("torch_pruning")
+    from rtod.models import build_yolox_tiny
+
+    seen = {}
+    base = build_yolox_tiny()
+    monkeypatch.setattr("rtod.coco.read_ids", lambda name: [1])
+    monkeypatch.setattr("rtod.models.load_official_weights", lambda path=None: base)
+    monkeypatch.setattr("rtod.manifest.write_manifest", lambda *a, **k: None)
+    monkeypatch.setattr("rtod.train.export_folded", lambda m, out: out)
+    monkeypatch.setattr("rtod.train.qat_finetune", lambda ids, split, **kw: seen.update(kw) or base)
+    rc = cli.main(
+        ["qat", "--prune-macs", "0.3", "--plain", "--warmup", "7", "--weight-decay", "1e-3",
+         "--no-ptq", "--out", str(tmp_path)]
+    )  # fmt: skip
+    assert rc == 0 and seen["plain"] is True and seen["warmup"] == 7
+    assert seen["weight_decay"] == 1e-3 and (tmp_path / "model_full.pt").exists()

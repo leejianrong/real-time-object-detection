@@ -103,6 +103,12 @@ SWEEPS: dict[str, dict[str, str]] = {
         "prune50_lr5e5": "--prune-macs 0.5 --no-fake-quant --lr 5e-5",
         "prune50_3750": "--prune-macs 0.5 --no-fake-quant --steps 3750",
     },
+    # Pruned models recovered with ordinary training (BN kept, lr 2.5e-3, weight decay, EMA). The
+    # `prune` sweep's folded-BN recipe at lr 1e-5 left every pruned model at 0.00 mAP.
+    "prune_std": {
+        "p30_std": "--prune-macs 0.3 --plain --lr 2.5e-3 --warmup 200 --steps 6000 --ema",
+        "p50_std": "--prune-macs 0.5 --plain --lr 2.5e-3 --warmup 200 --steps 6000 --ema",
+    },
     "qat3": {
         "qat_lr1e5": "--lr 1e-5",
         "qat_lr5e6": "--lr 5e-6",

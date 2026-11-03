@@ -106,6 +106,16 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument(
         "--prune-macs", type=float, help="prune this fraction of MACs first, then fine-tune"
     )
+    t.add_argument(
+        "--init", type=Path, help="start from a saved float model (model_full.pt of a plain run)"
+    )
+    t.add_argument(
+        "--plain",
+        action="store_true",
+        help="ordinary float training (BN kept, weight decay): recovers a pruned model",
+    )
+    t.add_argument("--warmup", type=int, default=0, help="linear lr warm-up steps")
+    t.add_argument("--weight-decay", type=float, default=5e-4, help="with --plain")
     t.add_argument("--workers", type=int, default=4)
     t.add_argument("--no-ptq", action="store_true", help="stop after exporting the folded model")
     t.add_argument("--out", type=Path, default=Path("qat_out"))
@@ -182,7 +192,11 @@ def main(argv: list[str] | None = None) -> int:
         split = "val" if args.subset == "val200" else "train"
         ids = coco.read_ids(args.subset)
         args.out.mkdir(parents=True, exist_ok=True)
+        import torch
+
         init = None
+        if args.init is not None:
+            init = torch.load(args.init, map_location="cpu", weights_only=False)
         if args.prune_macs is not None:
             import time
 
@@ -212,13 +226,15 @@ def main(argv: list[str] | None = None) -> int:
             ema_decay=args.ema_decay,
             fake_quant=not args.no_fake_quant,
             init=init,
+            plain=args.plain,
+            warmup=args.warmup,
+            weight_decay=args.weight_decay,
         )
-        import torch
-
         from rtod.manifest import write_manifest
 
         write_manifest(args.out, vars(args), args.subset)
         torch.save(model.state_dict(), args.out / "qat_model.pt")  # incl. observer ranges (path A)
+        torch.save(model, args.out / "model_full.pt")  # the architecture too: pruned shapes differ
         folded = export_folded(model, args.out / "yolox_tiny_qat_folded.onnx")
         if args.no_ptq:
             print(folded)
