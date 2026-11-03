@@ -52,7 +52,7 @@ import cv2
 from rtod.detect import OrtDetector
 from rtod.hub import fetch_model
 
-detector = OrtDetector(fetch_model("ptq-int8"), conf=0.3)   # downloads once, checks the sha256
+detector = OrtDetector(fetch_model("ptq-int8"), conf=0.3)  # downloads once, checks the sha256
 found = detector.detect(cv2.imread("street.jpg"))
 for box, score, class_id in zip(found.boxes, found.scores, found.class_ids):
     print(class_id, round(float(score), 2), box)
