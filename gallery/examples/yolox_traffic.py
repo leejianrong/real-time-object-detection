@@ -28,6 +28,7 @@ import asyncio
 import base64
 import io
 import json
+import logging
 import os
 import tempfile
 import time
@@ -52,6 +53,7 @@ from indah import (
     create_app,
 )
 
+log = logging.getLogger("yolox_traffic")
 ASSETS = Path(__file__).with_name("yolox_traffic")
 # A Colab or Space copies only this file: missing assets are fetched.
 ASSET_URL = "https://raw.githubusercontent.com/leejianrong/indah/main/examples/yolox_traffic"
@@ -198,6 +200,7 @@ def load_model() -> Model | None:
                 path = hf_hub_download(MODEL_REPO, MODEL_FILE)
             _model = Model(path)
         except Exception:
+            log.warning("model unavailable, serving the replay only", exc_info=True)
             return None
     return _model
 
