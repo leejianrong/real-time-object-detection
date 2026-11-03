@@ -28,8 +28,8 @@ def test_unknown_device_is_rejected():
 
 
 def test_gpu_devices_preload_the_cuda_libraries_and_cpu_does_not(monkeypatch):
-    """Regression: `rtod bench --device cuda` failed on a pod ('Require cuDNN 9 and CUDA 12') because
-    only the preflight script called preload_dlls; the detector has to do it itself."""
+    """Regression: `rtod bench --device cuda` failed on a pod ("Require cuDNN 9 and CUDA 12")
+    because only the preflight script called preload_dlls; the detector has to do it itself."""
     calls = []
     monkeypatch.setattr(ort, "preload_dlls", lambda *a, **k: calls.append(1), raising=False)
     monkeypatch.setattr(ort, "get_available_providers", lambda: ["CPUExecutionProvider"])
