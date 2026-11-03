@@ -50,9 +50,10 @@ class StubModel:
     """Answers with the recorded boxes after a fixed delay, so no model file is needed."""
 
     def __init__(self, ms=5.0):
-        self.ms, self.clip = ms, ex.Clip()
+        self.ms, self.clip, self.confs = ms, ex.Clip(), []
 
-    def detect(self, bgr):
+    def detect(self, bgr, conf=0.3):
+        self.confs.append(conf)
         time.sleep(self.ms / 1e3)
         return self.clip.meta["frames_detections"][13]  # a frame with a dozen boxes
 
@@ -170,7 +171,7 @@ def test_two_visitors_ask_for_live_one_gets_it_and_the_slot_frees_on_close(monke
         await pa.go_live()
         await pb.go_live()
         await until(lambda: pa.boxes.value and pb.boxes.value)
-        assert pa.live and pa.badge.value.startswith("Live")
+        assert pa.live and pa.badge.value == ""  # the control says it; no footnote
         assert not pb.live and "server busy" in pb.badge.value
         a.close()  # abrupt disconnect
         assert not ex.SLOT.held
@@ -212,6 +213,53 @@ def test_a_refused_live_request_puts_the_control_back_on_recorded(monkeypatch):
         c.close()
 
     asyncio.run(run())
+
+
+def test_the_threshold_slider_reaches_the_model_only_in_live(monkeypatch):
+    stub = StubModel()
+    monkeypatch.setattr(ex, "load_model", lambda: stub)
+
+    async def run():
+        c = FakeCtx()
+        ex.build_session(c)
+        p = player_of(c)
+        p.conf.set(0.1)  # a drag while recorded: read-only, so it snaps back
+        await p.sync_mode()
+        assert p.conf.value == ex.CONF
+        p.mode.set(ex.LIVE)
+        await p.sync_mode()
+        p.conf.set(0.1)
+        await p.sync_mode()
+        assert p.conf.value == 0.1  # live: the slider is free
+        await until(lambda: stub.confs and stub.confs[-1] == 0.1)
+        p.mode.set(ex.RECORDED)
+        await p.sync_mode()
+        assert p.conf.value == ex.CONF  # back to the recording's own threshold
+        c.close()
+
+    asyncio.run(run())
+
+
+def test_a_lower_threshold_finds_more_boxes_than_the_recording_has():
+    import numpy as np
+
+    raw = np.zeros((3, 85), dtype=np.float32)
+    raw[:, 2:4] = 20.0
+    raw[:, 0] = [50, 150, 250]
+    raw[:, 1] = 50
+    raw[:, 4] = [0.9, 0.5, 0.2]
+    raw[:, 5] = 1.0  # class 0 at full confidence, so the score is the objectness
+    few = ex.decode(raw, 1.0, (416, 416, 3), conf=ex.CONF)
+    many = ex.decode(raw, 1.0, (416, 416, 3), conf=0.1)
+    assert len(few) == 2 and len(many) == 3
+
+
+def test_the_page_has_the_short_title_and_a_subtitle_that_matches_the_shipped_model():
+    text = json.dumps(ex.Session(ex.page(ex.Player(ex.Clip()))).snapshot())
+    assert "Real-Time Object Detection with YOLOX-Tiny (INT8)" in text
+    assert "first time seeing this clip" in text
+    assert "ptq" in ex.MODEL_FILE and "quantization-aware" not in text  # say what actually runs
+    assert "Recorded: boxes and timings" not in text
 
 
 def test_a_model_that_cannot_load_says_why(monkeypatch, caplog):
