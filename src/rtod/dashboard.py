@@ -208,15 +208,20 @@ class Dashboard:
         return Session(self.page())
 
 
-def launch_dashboard(dashboard: Dashboard, **launch_kwargs: Any) -> Any:
-    """Serve the dashboard (inline in a notebook) and start the video loop on the server loop."""
+def build_app(dashboard: Dashboard) -> Any:
+    """The server: the page at /ui, a redirect from / (Colab and Runpod open the root), and the
+    video loop started on the server's own event loop."""
     import contextlib
 
     import indah
     from starlette.applications import Starlette
-    from starlette.routing import Mount
+    from starlette.responses import RedirectResponse
+    from starlette.routing import Mount, Route
 
     ui = indah.create_app(session_factory=lambda ctx: dashboard.session(), title="rtod", spa=True)
+
+    async def root(request: Any) -> RedirectResponse:
+        return RedirectResponse("ui/")  # relative: works behind a proxy's path prefix
 
     @contextlib.asynccontextmanager
     async def lifespan(app: Starlette) -> Any:
@@ -227,5 +232,14 @@ def launch_dashboard(dashboard: Dashboard, **launch_kwargs: Any) -> Any:
             if dashboard.task:
                 dashboard.task.cancel()
 
-    app = Starlette(routes=[Mount("/ui", app=ui)], lifespan=lifespan)
-    return indah.launch(app, **launch_kwargs)
+    app = Starlette(routes=[Route("/", root), Mount("/ui", app=ui)], lifespan=lifespan)
+    # launch() silences the proxy warning only on the app it is given; Colab always has a proxy
+    app.state.proxy_notice = getattr(ui.state, "proxy_notice", None)
+    return app
+
+
+def launch_dashboard(dashboard: Dashboard, **launch_kwargs: Any) -> Any:
+    """Serve the dashboard (inline in a notebook)."""
+    import indah
+
+    return indah.launch(build_app(dashboard), **launch_kwargs)

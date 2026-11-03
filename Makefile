@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install hooks lint typecheck unit integration check audit
+.PHONY: help install hooks lint typecheck unit integration check audit notebook
 
 help: ## List targets
 	@grep -E '^[a-z-]+:.*##' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -21,6 +21,10 @@ unit: ## Fast tests, no infra
 
 integration: ## CPU integration tests
 	uv run pytest tests/integration -m "integration and not slow" -q
+
+notebook: ## Rebuild the showcase notebook and run it; outputs in notebooks/out/
+	uv run python notebooks/make_notebook.py
+	uv run python notebooks/execute.py
 
 check: lint typecheck unit ## What pre-push runs
 

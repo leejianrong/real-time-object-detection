@@ -23,7 +23,7 @@ fp16 = ["onnxconverter-common>=1.14"]
 demo = ["indah>=0.11"]
 
 [dependency-groups]
-dev = ["nbclient>=0.10", "ipykernel>=6.29", "nbformat>=5.10", "pytest>=8", "ruff>=0.6", "mypy>=1.11", "pip-audit>=2.7", "matplotlib>=3.8"]
+dev = ["nbconvert>=7.16", "nbclient>=0.10", "ipykernel>=6.29", "nbformat>=5.10", "pytest>=8", "ruff>=0.6", "mypy>=1.11", "pip-audit>=2.7", "matplotlib>=3.8"]
 
 [project.scripts]
 rtod = "rtod.cli:main"
