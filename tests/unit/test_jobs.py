@@ -11,6 +11,7 @@ from rtod.jobs import (
     LogMonitor,
     RpProvider,
     bootstrap_cmd,
+    gpu_env,
     job_env,
     run_job,
 )
@@ -307,3 +308,17 @@ def test_min_ram_follows_the_job_spec():
     assert RpProvider.env(SPEC)["RP_MIN_RAM_GB"] == "16"
     small = JobSpec("gpu", "img", "x", (("SECURE", "A"),), 0.4, 1.0, min_ram_gb=8)
     assert RpProvider.env(small)["RP_MIN_RAM_GB"] == "8"
+
+
+def test_gpu_stage_selection_reaches_the_pod_script(tmp_path):
+    """Regression: `--only tensorrt` was parsed but never put in the pod's environment, so the pod
+    repeated the whole CUDA benchmark first."""
+    import subprocess
+
+    assert gpu_env() == {"RTOD_JOB": "gpu"}
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts/job_qat.sh").write_text('echo "ONLY:${RTOD_GPU_ONLY:-all}"\n')
+    cmd = bootstrap_cmd("abc", gpu_env("tensorrt"), base=f"file://{tmp_path}")
+    log = tmp_path / "log"
+    subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
+    assert "ONLY:tensorrt" in log.read_text()

@@ -135,6 +135,11 @@ def job_env(
     return env
 
 
+def gpu_env(only: str | None = None) -> dict[str, str]:
+    """Environment for the pod's GPU benchmark; `only` runs one stage ("cuda" or "tensorrt")."""
+    return {"RTOD_JOB": "gpu", **({"RTOD_GPU_ONLY": only} if only else {})}
+
+
 def bootstrap_cmd(sha: str, env: dict[str, str], base: str | None = None) -> str:
     """The pod's job command: fetch the pinned script (after rp's watchdog is armed) and run it.
 
