@@ -31,7 +31,7 @@ packages = ["src/rtod"]
 
 [tool.ruff]
 line-length = 100
-extend-exclude = ["src/rtod/_yolox"]
+extend-exclude = ["src/rtod/_yolox", "notebooks"]  # notebook source is text inside the generator
 src = ["src", "tests"]
 
 [tool.ruff.lint]

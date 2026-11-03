@@ -46,3 +46,12 @@ def test_nms_keeps_disjoint_boxes():
 
 def test_low_confidence_filtered():
     assert len(postprocess(np.stack([row(50, 50, 20, 20, 0.1, 0)]), 1.0, (416, 416, 3))) == 0
+
+
+def test_coco_names_are_the_80_classes_in_model_order():
+    from rtod.coco_names import COCO_NAMES
+
+    assert len(COCO_NAMES) == 80 and len(set(COCO_NAMES)) == 80
+    assert [COCO_NAMES[i] for i in (0, 2, 5, 7, 9, 79)] == [
+        "person", "car", "bus", "truck", "traffic light", "toothbrush"
+    ]  # fmt: skip
