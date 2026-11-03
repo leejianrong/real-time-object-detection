@@ -93,6 +93,15 @@ SWEEPS: dict[str, dict[str, str]] = {
     },
     # QAT at the learning rates float2 showed keep accuracy (5e-5 lost ~2.4 pt on val_dev, 1e-5 lost
     # 0.3). BN is folded before training, so weights carry the BN scale and need small steps.
+    # Pruned float models (no fake-quant: QAT on pruned models is a separate step). EMA is left off:
+    # started from the damaged pruned weights, a slow average would hold on to them.
+    "prune": {
+        "prune30": "--prune-macs 0.3 --no-fake-quant",
+        "prune50": "--prune-macs 0.5 --no-fake-quant",
+        "prune70": "--prune-macs 0.7 --no-fake-quant",
+        "prune50_lr5e5": "--prune-macs 0.5 --no-fake-quant --lr 5e-5",
+        "prune50_3750": "--prune-macs 0.5 --no-fake-quant --steps 3750",
+    },
     "qat3": {
         "qat_lr1e5": "--lr 1e-5",
         "qat_lr5e6": "--lr 5e-6",

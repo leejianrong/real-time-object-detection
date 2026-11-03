@@ -115,16 +115,18 @@ def qat_finetune(
     ema: bool = False,
     ema_decay: float = 0.999,
     fake_quant: bool = True,
+    init: torch.nn.Module | None = None,
 ) -> torch.nn.Module:
     """Fine-tune and return the model (the EMA weights if `ema`).
 
     `fake_quant=False` runs the identical recipe as a plain float fine-tune: the control that
     separates "the recipe hurts the model" from "quantization noise hurts the model".
+    `init` is a float model to start from instead of the official weights (a pruned one).
     """
     from rtod.models import load_official_weights
 
     seed_everything(seed)
-    model = prepare_qat(load_official_weights())
+    model = prepare_qat(init if init is not None else load_official_weights())
     ds = CocoSubset(ids, split)
     loader = DataLoader(
         ds,

@@ -102,6 +102,9 @@ def main(argv: list[str] | None = None) -> int:
     t.add_argument(
         "--no-fake-quant", action="store_true", help="float control: same recipe, no QAT"
     )
+    t.add_argument(
+        "--prune-macs", type=float, help="prune this fraction of MACs first, then fine-tune"
+    )
     t.add_argument("--workers", type=int, default=4)
     t.add_argument("--no-ptq", action="store_true", help="stop after exporting the folded model")
     t.add_argument("--out", type=Path, default=Path("qat_out"))
@@ -178,6 +181,13 @@ def main(argv: list[str] | None = None) -> int:
         split = "val" if args.subset == "val200" else "train"
         ids = coco.read_ids(args.subset)
         args.out.mkdir(parents=True, exist_ok=True)
+        init = None
+        if args.prune_macs is not None:
+            from rtod.models import load_official_weights
+            from rtod.prune import macs_params, prune_to_macs
+
+            init = prune_to_macs(load_official_weights(), args.prune_macs)
+            print(f"PRUNE macs={macs_params(init)[0]:.3e} params={macs_params(init)[1]:.3e}")
         model = qat_finetune(
             ids,
             split,
@@ -192,6 +202,7 @@ def main(argv: list[str] | None = None) -> int:
             ema=args.ema,
             ema_decay=args.ema_decay,
             fake_quant=not args.no_fake_quant,
+            init=init,
         )
         import torch
 
