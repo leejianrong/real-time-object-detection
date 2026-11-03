@@ -246,6 +246,7 @@ def main(argv: list[str] | None = None) -> int:
             m = coco.evaluate(args.model, eval_ids, jackknife=args.jackknife)
             r.map50_95, r.map50 = m["map50_95"], m["map50"]
             r.map50_95_se, r.eval_subset = m.get("map50_95_se"), args.eval
+            r.per_class_ap = m.get("per_class_ap")
         path = bench.write_result(r, args.out)
         print(json.dumps(asdict(r)) if args.json else path)
         return 0

@@ -116,6 +116,18 @@ def fetch_images(ids: Sequence[int], split: str = "val", cache: Path = CACHE) ->
     return out
 
 
+def per_class_ap(precision: Any, names: Sequence[str]) -> dict[str, float]:
+    """AP50-95 per class from COCOeval's precision array (T, R, K, A, M), all areas, 100 dets.
+
+    Entries of -1 mark recall levels a class never reaches, as in pycocotools' own summary.
+    """
+    out: dict[str, float] = {}
+    for k, name in enumerate(names):
+        p = precision[:, :, k, 0, 2]
+        out[name] = float(p[p > -1].mean()) if (p > -1).any() else float("nan")
+    return out
+
+
 def _score(gt: Any, results: list[dict[str, Any]], ids: Sequence[int], quiet: bool) -> Any:
     from contextlib import redirect_stdout
     from io import StringIO
@@ -128,7 +140,7 @@ def _score(gt: Any, results: list[dict[str, Any]], ids: Sequence[int], quiet: bo
         ev.evaluate()
         ev.accumulate()
         ev.summarize()
-    return ev.stats
+    return ev
 
 
 def evaluate(
@@ -162,17 +174,18 @@ def evaluate(
             )
     if not results:
         return {"map50_95": 0.0, "map50": 0.0, "images": len(ids)}
-    stats = _score(gt, results, ids, quiet=False)
+    ev = _score(gt, results, ids, quiet=False)
     out: dict[str, Any] = {
-        "map50_95": float(stats[0]),
-        "map50": float(stats[1]),
+        "map50_95": float(ev.stats[0]),
+        "map50": float(ev.stats[1]),
         "images": len(ids),
+        "per_class_ap": per_class_ap(ev.eval["precision"], [gt.cats[c]["name"] for c in cat_ids]),
     }
     if jackknife:
         rng = random.Random(0)
         keep = round(0.8 * len(ids))
         thetas = [
-            float(_score(gt, results, rng.sample(list(ids), keep), quiet=True)[0])
+            float(_score(gt, results, rng.sample(list(ids), keep), quiet=True).stats[0])
             for _ in range(jackknife)
         ]
         mean = sum(thetas) / len(thetas)
