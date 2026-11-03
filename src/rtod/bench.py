@@ -53,7 +53,21 @@ def load_result(path: Path) -> Result:
     return Result(**data)
 
 
-def hardware_fingerprint() -> dict[str, Any]:
+def gpu_info() -> dict[str, Any]:
+    """GPU model, driver and memory from nvidia-smi; empty when there is none."""
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=name,driver_version,memory.total",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, check=True,
+        ).stdout.strip().splitlines()[0]  # fmt: skip
+    except (OSError, subprocess.CalledProcessError, IndexError):
+        return {}
+    name, driver, mem = (x.strip() for x in out.split(","))
+    return {"gpu": name, "gpu_driver": driver, "gpu_memory_mb": int(mem)}
+
+
+def hardware_fingerprint(device: str = "cpu") -> dict[str, Any]:
     import onnxruntime
 
     model = platform.processor()
@@ -66,13 +80,16 @@ def hardware_fingerprint() -> dict[str, Any]:
         pass
     import os
 
-    return {
+    info: dict[str, Any] = {
         "cpu": model,
         "logical_cpus": os.cpu_count(),
         "platform": platform.platform(),
         "python": platform.python_version(),
         "onnxruntime": onnxruntime.__version__,
     }
+    if device != "cpu":
+        info.update(gpu_info(), ort_providers=onnxruntime.get_available_providers())
+    return info
 
 
 def _git_sha() -> str:
@@ -97,6 +114,7 @@ def bench(
     iters: int = MIN_ITERS,
     quick: bool = False,
     frame: Image | None = None,
+    device: str = "cpu",
 ) -> Result:
     """Time model-only and end-to-end (letterbox + model + decode/NMS) latency on CPU.
 
@@ -107,7 +125,10 @@ def bench(
         raise ValueError(f"need at least {MIN_ITERS} timed iterations (got {iters}); use quick")
     if frame is None:
         frame = np.random.default_rng(0).integers(0, 255, (480, 640, 3), dtype=np.uint8)
-    det = OrtDetector(model, threads=threads, conf=0.25)
+    det = OrtDetector(model, threads=threads, conf=0.25, device=device)
+    wanted = {"cuda": "CUDAExecutionProvider", "tensorrt": "TensorrtExecutionProvider"}.get(device)
+    if wanted and det.providers[0] != wanted:
+        raise ValueError(f"device={device!r} fell back to {det.providers[0]}: not timing that")
     blob: F32 = letterbox(frame)[0]
     for _ in range(warmup):
         det.detect(frame)
@@ -126,8 +147,8 @@ def bench(
     e50, e95 = _percentiles(e2e_ms)
     return Result(
         variant=variant,
-        runtime="ort-cpu",
-        hardware=hardware_fingerprint(),
+        runtime={"cuda": "ort-cuda", "tensorrt": "ort-tensorrt"}.get(device, "ort-cpu"),
+        hardware=hardware_fingerprint(device),
         threads=threads,
         input_size=INPUT_SIZE,
         warmup=warmup,

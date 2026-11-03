@@ -25,6 +25,67 @@ phase boot "host=$(hostname) cpus=$(nproc) ram_gb=$(free -g | awk '/Mem:/{print 
 nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader || { say "RTOD_FATAL phase=boot no nvidia-smi: not a GPU pod" ; exit 3 ; }
 df -h $W | tail -1 ; python3 --version
 
+publish() {  # publish() <code-base> <tarball>: the sender must stay up until the driver has received it
+  runpodctl send --code "$1" "$2" > "$LOGS/send_$1.log" 2>&1 &
+  local pid=$! code=""
+  for _ in $(seq 30) ; do code=$(grep -oE "$1[-0-9]+" "$LOGS/send_$1.log" | head -1 || true) ; [ -n "$code" ] && break ; sleep 1 ; done
+  say "RTOD_ARTIFACT $2 sha256=$(sha256sum "$2" | cut -d' ' -f1) bytes=$(stat -c %s "$2")"
+  say "RP_ARTIFACT_CODE=$code"
+  wait $pid
+}
+
+# ---- GPU benchmark job (RTOD_JOB=gpu): FP32 / FP16 / INT8 on CUDA, then TensorRT as a best effort.
+gpu_job() {
+  OUT=$W/gpu_results ; M=$W/models ; mkdir -p "$OUT" "$M"
+  phase install "gpu job sha=$RTOD_SHA"
+  pip install -q "rtod[fp16,coco] @ git+https://github.com/leejianrong/real-time-object-detection@${RTOD_SHA}" onnxruntime-gpu 2>&1 | tee "$LOGS/install.log"
+  phase preflight "onnxruntime CUDA provider"
+  python3 - <<'PY' 2>&1 | tee "$LOGS/preflight.log"
+import sys, onnxruntime as ort
+try:
+    ort.preload_dlls()
+except Exception as e:
+    print("preload_dlls:", e, flush=True)
+print("ort", ort.__version__, ort.get_available_providers(), flush=True)
+if "CUDAExecutionProvider" not in ort.get_available_providers():
+    print("RTOD_FATAL phase=preflight no CUDAExecutionProvider in onnxruntime-gpu", flush=True); sys.exit(3)
+PY
+  phase fetch "models from the Hub, FP16 conversion"
+  (cd "$M" && python3 - <<'PY'
+from pathlib import Path
+from rtod.hub import fetch_model
+from rtod.fp16 import to_fp16
+paths = {n: fetch_model(n, Path(".")) for n in ("fp32", "ptq-int8", "qat-int8")}
+print("fetched", {k: v.name for k, v in paths.items()}, flush=True)
+to_fp16(paths["fp32"], Path("yolox_tiny_fp16.onnx"))
+print("fp16 written", flush=True)
+PY
+  ) 2>&1 | tee "$LOGS/fetch.log"
+  phase bench "CUDA execution provider: batch 1, 500 timed runs, val_test mAP"
+  for v in "fp32:yolox_tiny_fp32.onnx" "fp16:yolox_tiny_fp16.onnx" "ptq-int8:yolox_tiny_ptq_int8_calib32.onnx" "qat-int8:yolox_tiny_qat_int8_pathA.onnx" ; do
+    name="${v%%:*}" ; file="${v#*:}"
+    rtod bench "$M/$file" --variant "yolox-tiny/$name" --device cuda --iters 500 --eval val_test --jackknife 10 --out "$OUT" 2>&1 | tee "$LOGS/bench_$name.log"
+  done
+  phase tensorrt "best effort: TensorRT execution provider; a failure is recorded, not fatal"
+  if pip install -q tensorrt-cu12 2>&1 | tee "$LOGS/trt_install.log" ; then
+    export LD_LIBRARY_PATH="$(python3 -c 'import os, tensorrt_libs; print(os.path.dirname(tensorrt_libs.__file__))' 2>/dev/null || true):${LD_LIBRARY_PATH:-}"
+  fi
+  for v in "fp32:yolox_tiny_fp32.onnx" "ptq-int8:yolox_tiny_ptq_int8_calib32.onnx" "qat-int8:yolox_tiny_qat_int8_pathA.onnx" ; do
+    name="${v%%:*}" ; file="${v#*:}"
+    if ! rtod bench "$M/$file" --variant "yolox-tiny/$name-trt" --device tensorrt --iters 500 --eval val_test --jackknife 10 --out "$OUT" > "$LOGS/trt_$name.log" 2>&1 ; then
+      say "TENSORRT_UNAVAILABLE variant=$name: $(tail -n 3 "$LOGS/trt_$name.log" | tr '\n' ' ' | cut -c1-300)"
+    fi
+  done
+  phase send "results and logs"
+  mkdir -p "$OUT/logs" && cp "$LOGS"/*.log "$OUT/logs/" 2>/dev/null || true
+  nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv > "$OUT/gpu.txt" 2>&1 || true
+  pip list 2>/dev/null | grep -iE "onnxruntime|tensorrt|onnx|numpy" > "$OUT/versions.txt" || true
+  tar -C "$W" -czf "$W/gpu_results.tgz" gpu_results
+  publish "rtodgpu1" "$W/gpu_results.tgz"
+  phase done ; say "RTOD_DONE"
+}
+if [ "${RTOD_JOB:-qat}" = gpu ]; then gpu_job ; exit 0 ; fi
+
 phase install "sha=$RTOD_SHA"
 if [ -z "${RTOD_SKIP_INSTALL:-}" ]; then
   pip install -q "rtod[torch,onnx,coco,plot,prune] @ git+https://github.com/leejianrong/real-time-object-detection@${RTOD_SHA}" 2>&1 | tee "$LOGS/install.log"
@@ -43,15 +104,6 @@ PY
 phase smoke "3 steps on 16 val images; a failure here costs minutes, not the whole run"
 rtod qat --subset val200 --steps 3 --batch 4 --workers 2 --device cuda --out "$W/smoke" 2>&1 | tee "$LOGS/smoke.log"
 test -s "$W/smoke/yolox_tiny_qat_int8.onnx"
-
-publish() {  # publish() <code-base> <tarball>: the sender must stay up until the driver has received it
-  runpodctl send --code "$1" "$2" > "$LOGS/send_$1.log" 2>&1 &
-  local pid=$! code=""
-  for _ in $(seq 30) ; do code=$(grep -oE "$1[-0-9]+" "$LOGS/send_$1.log" | head -1 || true) ; [ -n "$code" ] && break ; sleep 1 ; done
-  say "RTOD_ARTIFACT $2 sha256=$(sha256sum "$2" | cut -d' ' -f1) bytes=$(stat -c %s "$2")"
-  say "RP_ARTIFACT_CODE=$code"
-  wait $pid
-}
 
 # One config per artifact, published as soon as it finishes so a later failure cannot lose it.
 # QAT_CONFIGS is "name:flags,name:flags"; unset means a single config built from QAT_LR/QAT_CLIP.

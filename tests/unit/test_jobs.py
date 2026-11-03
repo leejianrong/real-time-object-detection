@@ -289,3 +289,14 @@ def test_sigterm_to_the_driver_still_tears_down_and_charges(tmp_path):
         run_job(fake, ledger, SPEC, tmp_path)
     assert "down" in fake.calls and len(ledger.entries()) == 1
     assert signal.getsignal(signal.SIGTERM) == before
+
+
+def test_job_kind_reaches_the_pod_script_through_rps_wrapper(tmp_path):
+    import subprocess
+
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts/job_qat.sh").write_text('echo "KIND:${RTOD_JOB:-qat}"\n')
+    cmd = bootstrap_cmd("abc", {"RTOD_JOB": "gpu"}, base=f"file://{tmp_path}")
+    log = tmp_path / "log"
+    subprocess.run(["bash", "-c", f'( {cmd} 2>&1 | tee "{log}" )'], check=True, capture_output=True)
+    assert "KIND:gpu" in log.read_text()
