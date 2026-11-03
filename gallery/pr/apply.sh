@@ -26,6 +26,12 @@ t = t.replace('ROOT = Path(__file__).parents[2]\nEXAMPLE = ROOT / "gallery/examp
               'ROOT = Path(__file__).resolve().parents[2]\nEXAMPLE = ROOT / "examples" / "yolox_traffic.py"')
 t = t.replace('ROOT / "gallery/examples/yolox_traffic/replay.json"', 'ROOT / "examples/yolox_traffic/replay.json"')
 assert "gallery/examples" not in t
+t += """
+
+def test_the_build_script_prefetches_the_pinned_model_revision():
+    sh = (ROOT / "deploy/fly/build_gallery.sh").read_text()
+    assert f"revision='{ex.MODEL_REVISION}'" in sh  # build and run time serve the same model
+"""
 (indah / "tests/integration/test_yolox_traffic_example.py").write_text(t)
 
 # catalog
@@ -48,6 +54,27 @@ if "yolox_traffic" not in s:
                   "d('jianlee/yolox-tiny-quantized', 'yolox_tiny_ptq_int8_calib32.onnx')\"", 1)
     assert s.count("yolox") >= 3, "build_gallery.sh no longer has the lines this patch edits"
     sh.write_text(s)
+
+# the model prefetch is pinned to the commit the example expects (also fixes an earlier unpinned apply)
+s = sh.read_text()
+pin = re.search(r'MODEL_REVISION = "([0-9a-f]{40})"', (here / "examples/yolox_traffic.py").read_text()).group(1)
+old = "d('jianlee/yolox-tiny-quantized', 'yolox_tiny_ptq_int8_calib32.onnx'"
+if f"revision='{pin}'" not in s:
+    s = re.sub(re.escape(old) + r"(, revision='[0-9a-f]{40}')?\)", old + f", revision='{pin}')", s, count=1)
+    assert f"revision='{pin}'" in s
+    sh.write_text(s)
+
+# the gallery rule, in the doc that states it
+doc = indah / "docs/GALLERY-APPS-NEXT.md"
+d = doc.read_text()
+was = "each\napp is model-free, needs no network at run time and has bounded work per session."
+now = ("each\napp has bounded work per session and needs no network at run time. A demo may run a model if it is small, "
+       "fetched at image build time (the Hugging Face cache is baked into the image and pinned to a commit), "
+       "bounded by a global slot, and has a recorded fallback; object_detection, upload_classify and yolox-traffic do.")
+if was in d:
+    doc.write_text(d.replace(was, now, 1))
+else:
+    assert "has a recorded fallback" in d, "the gallery rule line moved; update apply.sh"
 
 # the Colab and Space demo list (deploy/spaces/demos.tsv), which indah's tests keep in step with the catalog
 tsv = indah / "deploy/spaces/demos.tsv"
