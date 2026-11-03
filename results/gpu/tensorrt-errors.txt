@@ -1,0 +1,18 @@
+TensorRT 10.9.0.34 through onnxruntime-gpu 1.22.0 (TensorRT execution provider), RTX 2000 Ada, 2026-11-03.
+Key error lines per model (ANSI colours and timestamps stripped).
+
+== FP32 with int8+fp16 enabled
+  IBuilder::buildSerializedNetwork: Error Code 4: Internal Error (Calibration failure occurred with no scaling factors detected. This could be due to no int8 calibrator or insufficient custom scales for network layers. Please see int8 sample to setup calibration correctly.)
+  onnxruntime.capi.onnxruntime_pybind11_state.Fail: [ONNXRuntimeError] : 1 : FAIL : TensorRT EP failed to create engine from network for fused node: TensorrtExecutionProvider_TRTKernel_graph_main_graph_10133438134104634123_0_0
+
+== PTQ INT8 (QDQ)
+  IDequantizeLayer::setPrecision: Error Code 3: API Usage Error (Parameter check failed, condition: isQuantized(dataType). A DequantizeLayer can only run in DataType::kINT8, DataType::kFP8, DataType::kFP4 or DataType::kINT4precision)
+  ITensor::getDimensions: Error Code 3: API Usage Error (head.cls_preds.0.bias_DequantizeLinear: only activation types allowed as input to this layer.)
+  In node 0 with name: head.cls_preds.0.bias_DequantizeLinear and operator: DequantizeLinear (parseNode): INVALID_NODE: Invalid Node - head.cls_preds.0.bias_DequantizeLinear
+  ITensor::getDimensions: Error Code 3: API Usage Error (head.cls_preds.1.bias_DequantizeLinear: only activation types allowed as input to this layer.)
+
+== QAT INT8 (QDQ)
+  IDequantizeLayer::setPrecision: Error Code 3: API Usage Error (Parameter check failed, condition: isQuantized(dataType). A DequantizeLayer can only run in DataType::kINT8, DataType::kFP8, DataType::kFP4 or DataType::kINT4precision)
+  ITensor::getDimensions: Error Code 3: API Usage Error (/backbone/backbone/stem/conv/conv/Conv_bias_dq: only activation types allowed as input to this layer.)
+  In node 92 with name: /backbone/backbone/stem/conv/conv/Conv_bias_dq and operator: DequantizeLinear (parseNode): INVALID_NODE: Invalid Node - /backbone/backbone/stem/conv/conv/Conv_bias_dq
+  In node 1 with name: /backbone/backbone/stem/conv/conv/out_fq/QuantizeLinear and operator: QuantizeLinear (QuantDequantLinearHelper): INVALID_NODE: Assertion failed: shiftIsAllZeros(zeroPoint): TensorRT only supports symmetric quantization. The zero point for the QuantizeLinear/DequantizeLinear operator must be all zeros.
