@@ -101,3 +101,9 @@ def test_plain_training_options_reach_the_fine_tune(monkeypatch, tmp_path):
     )  # fmt: skip
     assert rc == 0 and seen["plain"] is True and seen["warmup"] == 7
     assert seen["weight_decay"] == 1e-3 and (tmp_path / "model_full.pt").exists()
+
+
+def test_dashboard_command_refuses_a_missing_clip(monkeypatch, tmp_path):
+    pytest.importorskip("indah")
+    monkeypatch.setattr("rtod.hub.fetch_model", lambda name, *a, **k: tmp_path / f"{name}.onnx")
+    assert cli.main(["dashboard", "--clip", str(tmp_path / "nope.mp4")]) == 2

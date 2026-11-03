@@ -28,6 +28,9 @@ def code(text: str) -> None:
 md("""
 # Making YOLOX-Tiny small and fast: quantization, QAT, pruning and what we measured
 
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/leejianrong/real-time-object-detection/blob/main/notebooks/rtod_showcase.ipynb)
+Runs on a free CPU runtime: choose *Runtime > Run all*. A GPU runtime adds a GPU benchmark cell.
+
 [YOLOX-Tiny](https://github.com/Megvii-BaseDetection/YOLOX) (Apache-2.0) detects 80 kinds of
 objects at 416 px. This notebook shrinks it with **INT8 quantization** (post-training and
 quantization-aware training) and **structured pruning**, measures what each costs in accuracy and buys

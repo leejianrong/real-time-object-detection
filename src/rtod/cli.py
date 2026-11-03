@@ -148,6 +148,9 @@ def main(argv: list[str] | None = None) -> int:
     pr.add_argument("--macs-removed", type=float, required=True, help="fraction in (0, 1)")
     pr.add_argument("--out", type=Path, required=True, help="pruned model (torch pickle)")
     pr.add_argument("--onnx", type=Path, help="also export the pruned float model")
+    d = sub.add_parser("dashboard", help="live detection dashboard in the browser (indah)")
+    d.add_argument("--clip", type=Path, default=Path("assets/demo/traffic_ljubljana.mp4"))
+    d.add_argument("--port", type=int, help="default: the first free port from 8000")
     x = sub.add_parser("export-qdq", help="export a trained QAT checkpoint as a QDQ ONNX graph")
     x.add_argument("checkpoint", type=Path, help="qat_model.pt saved by `rtod qat`")
     x.add_argument("out", type=Path)
@@ -175,6 +178,18 @@ def main(argv: list[str] | None = None) -> int:
         if args.onnx:
             pruned.head.decode_in_inference = True
             print(export_onnx(pruned, args.onnx))
+        return 0
+
+    if args.cmd == "dashboard":
+        from rtod.dashboard import Dashboard, launch_dashboard
+        from rtod.hub import fetch_model
+
+        names = {"FP32": "fp32", "INT8 PTQ": "ptq-int8", "INT8 QAT": "qat-int8"}
+        models = {label: fetch_model(key) for label, key in names.items()}  # cached in .cache/
+        if not args.clip.exists():
+            print(f"error: clip not found: {args.clip} (run from the repo root)", file=sys.stderr)
+            return 2
+        launch_dashboard(Dashboard(args.clip, models), port=args.port, block=True)
         return 0
 
     if args.cmd == "export-qdq":
