@@ -7,4 +7,9 @@ This product includes software and model weights developed by third parties:
   Copyright (c) Megvii Inc. Licensed under the Apache License, Version 2.0.
   YOLOX-Tiny architecture and COCO-pretrained weights are the starting point of this project.
 
+- Demo clip `assets/demo/traffic_ljubljana.mp4`: "Road traffic in Ljubljana" by Sounds of Changes,
+  https://commons.wikimedia.org/wiki/File:Road_traffic_in_Ljubljana.webm, licensed CC BY 3.0
+  (https://creativecommons.org/licenses/by/3.0/). Changes: first 40 seconds only, audio removed,
+  scaled to 960x540 and re-encoded as H.264.
+
 Further attributions (demo video clip, other dependencies) are added here as they are shipped.
