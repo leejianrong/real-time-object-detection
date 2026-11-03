@@ -72,13 +72,17 @@ to_fp16(paths["fp32"], Path("yolox_tiny_fp16.onnx"))
 print("fp16 written", flush=True)
 PY
   ) 2>&1 | tee "$LOGS/fetch.log"
+  ONLY="${RTOD_GPU_ONLY:-cuda,tensorrt}"  # rerun one stage without repeating the other
+  if [[ "$ONLY" == *cuda* ]]; then
   phase bench "CUDA execution provider: batch 1, 500 timed runs, val_test mAP"
   for v in "fp32:yolox_tiny_fp32.onnx" "fp16:yolox_tiny_fp16.onnx" "ptq-int8:yolox_tiny_ptq_int8_calib32.onnx" "qat-int8:yolox_tiny_qat_int8_pathA.onnx" ; do
     name="${v%%:*}" ; file="${v#*:}"
     rtod bench "$M/$file" --variant "yolox-tiny/$name" --device cuda --iters 500 --eval val_test --jackknife 10 --out "$OUT" 2>&1 | tee "$LOGS/bench_$name.log"
   done
+  fi
+  if [[ "$ONLY" == *tensorrt* ]]; then
   phase tensorrt "best effort: TensorRT execution provider; a failure is recorded, not fatal"
-  if pip install -q tensorrt-cu12 2>&1 | tee "$LOGS/trt_install.log" ; then
+  if pip install -q "tensorrt-cu12==10.9.0.34" 2>&1 | tee "$LOGS/trt_install.log" ; then
     export LD_LIBRARY_PATH="$(python3 -c 'import os, tensorrt_libs; print(os.path.dirname(tensorrt_libs.__file__))' 2>/dev/null || true):${LD_LIBRARY_PATH:-}"
   fi
   for v in "fp32:yolox_tiny_fp32.onnx" "ptq-int8:yolox_tiny_ptq_int8_calib32.onnx" "qat-int8:yolox_tiny_qat_int8_pathA.onnx" ; do
@@ -87,6 +91,7 @@ PY
       say "TENSORRT_UNAVAILABLE variant=$name: $(tail -n 3 "$LOGS/trt_$name.log" | tr '\n' ' ' | cut -c1-300)"
     fi
   done
+  fi
   phase send "results and logs"
   mkdir -p "$OUT/logs" && cp "$LOGS"/*.log "$OUT/logs/" 2>/dev/null || true
   nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv > "$OUT/gpu.txt" 2>&1 || true
