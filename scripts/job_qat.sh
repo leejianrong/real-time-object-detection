@@ -26,7 +26,7 @@ df -h $W | tail -1 ; python3 --version
 
 phase install "sha=$RTOD_SHA"
 if [ -z "${RTOD_SKIP_INSTALL:-}" ]; then
-  pip install -q "rtod[torch,onnx,coco,plot] @ git+https://github.com/leejianrong/real-time-object-detection@${RTOD_SHA}" 2>&1 | tee "$LOGS/install.log"
+  pip install -q "rtod[torch,onnx,coco,plot,prune] @ git+https://github.com/leejianrong/real-time-object-detection@${RTOD_SHA}" 2>&1 | tee "$LOGS/install.log"
 fi
 
 phase preflight

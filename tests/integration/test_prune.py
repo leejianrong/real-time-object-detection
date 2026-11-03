@@ -22,3 +22,20 @@ def test_pruned_onnx_runs_and_its_size_matches_the_torch_model(tmp_path):
         None, {sess.get_inputs()[0].name: np.zeros((1, 3, INPUT_SIZE, INPUT_SIZE), np.float32)}
     )
     assert out[0].shape == (1, 3549, 85)
+
+
+def test_a_pruned_model_trains_through_the_qat_wrapper():
+    import torch
+
+    from rtod.qat import prepare_qat, set_fake_quant
+    from rtod.train import MAX_LABELS
+
+    model = prepare_qat(prune_to_macs(build_yolox_tiny(), 0.4))
+    set_fake_quant(model, False)
+    model.train()
+    x = torch.rand(2, 3, INPUT_SIZE, INPUT_SIZE)
+    y = torch.zeros(2, MAX_LABELS, 5)
+    y[:, 0] = torch.tensor([3, 200, 200, 80, 60])
+    loss = model(x, y)["total_loss"]
+    loss.backward()
+    assert torch.isfinite(loss)

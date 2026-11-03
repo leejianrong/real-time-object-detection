@@ -59,3 +59,26 @@ def test_export_qdq_loads_the_checkpoint_and_exports_with_decode_in_graph(monkey
 def test_prune_rejects_a_ratio_outside_zero_one(tmp_path):
     pytest.importorskip("torch_pruning")
     assert cli.main(["prune", "--macs-removed", "1.5", "--out", str(tmp_path / "p.pt")]) == 2
+
+
+def test_qat_prune_macs_hands_a_pruned_model_to_the_fine_tune(monkeypatch, tmp_path):
+    pytest.importorskip("torch_pruning")
+    from rtod.models import build_yolox_tiny
+    from rtod.prune import macs_params
+
+    seen = {}
+    base = build_yolox_tiny()
+    monkeypatch.setattr("rtod.coco.read_ids", lambda name: [1])
+    monkeypatch.setattr("rtod.models.load_official_weights", lambda path=None: base)
+    monkeypatch.setattr("rtod.manifest.write_manifest", lambda *a, **k: None)
+    monkeypatch.setattr("rtod.train.export_folded", lambda m, out: out)
+
+    def fake_finetune(ids, split, **kw):
+        seen["macs"] = macs_params(kw["init"])[0]
+        return base
+
+    monkeypatch.setattr("rtod.train.qat_finetune", fake_finetune)
+    rc = cli.main(
+        ["qat", "--prune-macs", "0.4", "--no-fake-quant", "--no-ptq", "--out", str(tmp_path)]
+    )
+    assert rc == 0 and seen["macs"] < 0.8 * macs_params(base)[0]
