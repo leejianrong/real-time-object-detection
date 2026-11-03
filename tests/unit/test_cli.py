@@ -54,3 +54,8 @@ def test_export_qdq_loads_the_checkpoint_and_exports_with_decode_in_graph(monkey
     )
     assert cli.main(["export-qdq", "qat_model.pt", str(tmp_path / "o.onnx")]) == 0
     assert calls == {"decode": True}
+
+
+def test_prune_rejects_a_ratio_outside_zero_one(tmp_path):
+    pytest.importorskip("torch_pruning")
+    assert cli.main(["prune", "--macs-removed", "1.5", "--out", str(tmp_path / "p.pt")]) == 2
