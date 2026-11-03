@@ -111,6 +111,10 @@ SWEEPS: dict[str, dict[str, str]] = {
 }
 
 
+# prune30 finished in the first attempt (its artifact was received); this is the rest.
+SWEEPS["prune_rest"] = {k: v for k, v in SWEEPS["prune"].items() if k != "prune30"}
+
+
 def job_env(
     steps: int, lr: float, clip: float, configs: dict[str, str] | None = None
 ) -> dict[str, str]:

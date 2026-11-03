@@ -12,6 +12,7 @@ from rtod.models import INPUT_SIZE
 
 # channel counts rounded to a multiple of this: unaligned widths gave no CPU speedup at all
 ROUND_TO = 16
+PRUNE_THREADS = 4
 
 
 def macs_params(model: torch.nn.Module, size: int = INPUT_SIZE) -> tuple[float, float]:
@@ -46,9 +47,20 @@ def prune_to_macs(model: torch.nn.Module, macs_removed: float) -> torch.nn.Modul
     """
     if not 0 < macs_removed < 1:
         raise ValueError(f"macs_removed must be in (0, 1), got {macs_removed}")
+    # Tiny ops on many threads are slower, not faster: 7 s at 4 threads, 24 s at 16, and about
+    # 35 minutes on a 64-thread pod. Cap the threads while pruning, then restore.
+    previous = torch.get_num_threads()
+    torch.set_num_threads(min(previous, PRUNE_THREADS))
+    try:
+        return _bisect(model, macs_removed)
+    finally:
+        torch.set_num_threads(previous)
+
+
+def _bisect(model: torch.nn.Module, macs_removed: float) -> torch.nn.Module:
     base, _ = macs_params(model)
     lo, hi, best, gap = 0.0, 0.9, model, 1.0
-    for _ in range(14):
+    for _ in range(10):
         mid = (lo + hi) / 2
         cand = _prune_channels(model, mid)
         removed = 1 - macs_params(cand)[0] / base

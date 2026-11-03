@@ -21,3 +21,18 @@ def test_pruned_model_hits_the_mac_target_and_keeps_the_output_contract():
     assert abs((1 - macs / base) - 0.4) < 0.08
     assert params < macs_params(model)[1]
     assert tuple(pruned(torch.randn(1, 3, 416, 416)).shape) == (1, 3549, 85)
+
+
+def test_pruning_caps_torch_threads_and_restores_them(monkeypatch):
+    """Regression: on a 64-thread pod pruning took ~35 minutes per model; it needs few threads."""
+    import rtod.prune as prune
+
+    seen = []
+    monkeypatch.setattr(prune, "_bisect", lambda m, r: seen.append(torch.get_num_threads()) or m)
+    before = torch.get_num_threads()
+    torch.set_num_threads(max(before, 8))
+    try:
+        prune.prune_to_macs(build_yolox_tiny(), 0.3)
+        assert seen == [prune.PRUNE_THREADS] and torch.get_num_threads() == max(before, 8)
+    finally:
+        torch.set_num_threads(before)
