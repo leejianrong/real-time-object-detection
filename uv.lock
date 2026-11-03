@@ -1612,6 +1612,21 @@ wheels = [
 ]
 
 [[package]]
+name = "onnxconverter-common"
+version = "1.16.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "onnx" },
+    { name = "packaging" },
+    { name = "protobuf" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4a/67/8dca1868a6e226f8d3f7d666cb6a48b79a60aad5267b16b24627cd8d9eb8/onnxconverter_common-1.16.0-py2.py3-none-any.whl", hash = "sha256:df39ee96f17fff119dff10dd245467651b60b9e8a96020eb93402239794852f7", size = 89511, upload-time = "2025-08-28T19:37:46.988Z" },
+]
+
+[[package]]
 name = "onnxruntime"
 version = "1.31.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2014,6 +2029,9 @@ dependencies = [
 coco = [
     { name = "pycocotools" },
 ]
+fp16 = [
+    { name = "onnxconverter-common" },
+]
 onnx = [
     { name = "onnx" },
     { name = "onnxruntime" },
@@ -2046,6 +2064,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.26" },
     { name = "onnx", marker = "extra == 'onnx'", specifier = ">=1.16" },
     { name = "onnx", marker = "extra == 'torch'", specifier = ">=1.16" },
+    { name = "onnxconverter-common", marker = "extra == 'fp16'", specifier = ">=1.14" },
     { name = "onnxruntime", marker = "extra == 'onnx'", specifier = ">=1.18" },
     { name = "opencv-python-headless", specifier = ">=4.9" },
     { name = "pycocotools", marker = "extra == 'coco'", specifier = ">=2.0.8" },
@@ -2053,7 +2072,7 @@ requires-dist = [
     { name = "torch", marker = "extra == 'torch'", specifier = ">=2.4", index = "https://download.pytorch.org/whl/cpu" },
     { name = "torch-pruning", marker = "extra == 'prune'", specifier = ">=1.5" },
 ]
-provides-extras = ["onnx", "torch", "coco", "plot", "prune"]
+provides-extras = ["onnx", "torch", "coco", "plot", "prune", "fp16"]
 
 [package.metadata.requires-dev]
 dev = [
