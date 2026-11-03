@@ -219,3 +219,73 @@ def test_every_named_sweep_encodes_cleanly_and_has_unique_config_names():
         assert len(env.split(",")) == len(configs), name
         assert all(c and ":" in c for c in env.split(",")), name
         assert not set("|;'\n") & set(env), name  # characters the shell layers would eat
+
+
+HB = "RTOD_HB t+0100s phase=train gpu(util%,memMiB,totMiB,C)=0,2,16380,29 load=3 last=-"
+
+
+def test_train_phase_without_progress_lines_warns_then_goes_fatal_despite_heartbeats():
+    """Regression: a pod sat in `train` for 23 minutes (pruning at 64 threads) with a healthy
+    heartbeat and an idle GPU; heartbeats alone only prove the shell is alive."""
+    mon = LogMonitor(start=0)
+    feed(mon, 1, "RTOD t+0001s phase=train config=a")
+    assert feed(mon, 100, "RTOD_HB 1") == []
+    assert [lvl for lvl, _ in feed(mon, 320, "RTOD_HB 2") if lvl != "status"] == ["warn"]
+    assert [lvl for lvl, _ in feed(mon, 400, "RTOD_HB 3") if lvl != "status"] == []  # warned once
+    level, msg = feed(mon, 950, "RTOD_HB 4")[0]
+    assert level == "fatal" and "no progress" in msg
+
+
+@pytest.mark.parametrize(
+    "line",
+    ["TRAIN step=10/1250 loss=7", "PRUNE start macs_removed=0.5", "DATA split=train fetched=10/20"],
+)
+def test_progress_lines_keep_a_long_train_phase_healthy(line):
+    mon = LogMonitor(start=0)
+    feed(mon, 1, "RTOD t+0001s phase=train config=a")
+    for t in range(200, 2000, 200):
+        evs = feed(mon, t, f"{line} t={t}", f"RTOD_HB {t}")
+        assert all(lvl in ("info", "status") for lvl, _ in evs)
+
+
+def test_gpu_idle_during_train_is_reported_while_data_is_still_flowing():
+    mon = LogMonitor(start=0)
+    feed(mon, 1, "RTOD t+0001s phase=train config=a")
+    out = []
+    for i in range(4):
+        out += feed(mon, 10 + i, f"{HB} n={i}", f"DATA split=train fetched={i}/9")
+    assert any(lvl == "warn" and "GPU" in msg for lvl, msg in out)
+
+
+def test_busy_gpu_is_not_reported():
+    mon = LogMonitor(start=0)
+    feed(mon, 1, "RTOD t+0001s phase=train config=a")
+    busy = HB.replace("=0,2,", "=85,1168,")
+    assert all(lvl != "warn" for i in range(6) for lvl, _ in feed(mon, 5 + i, f"{busy} n={i}"))
+
+
+def test_a_status_line_summarises_the_job_every_two_minutes():
+    mon = LogMonitor(start=0)
+    feed(mon, 1, "RTOD t+0001s phase=train config=a", "TRAIN step=10/1250 loss=7")
+    evs = feed(mon, 130, "RTOD_HB 1")
+    status = [m for lvl, m in evs if lvl == "status"]
+    assert len(status) == 1 and "phase=train" in status[0] and "step=10/1250" in status[0]
+
+
+def test_sigterm_to_the_driver_still_tears_down_and_charges(tmp_path):
+    """Regression: `kill <driver>` skipped the finally block, leaving the pod running."""
+    import os
+    import signal
+
+    class Killed(Fake):
+        def follow(self):
+            self.calls.append("follow")
+            os.kill(os.getpid(), signal.SIGTERM)
+            yield "never"
+
+    fake, ledger = Killed(), Ledger(tmp_path / "s.json")
+    before = signal.getsignal(signal.SIGTERM)
+    with pytest.raises(KeyboardInterrupt):
+        run_job(fake, ledger, SPEC, tmp_path)
+    assert "down" in fake.calls and len(ledger.entries()) == 1
+    assert signal.getsignal(signal.SIGTERM) == before
