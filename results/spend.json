@@ -251,5 +251,148 @@
     ],
     "max_hourly_usd": 0.4,
     "max_hours": 1.5
+  },
+  {
+    "job": "qat",
+    "hours": 0.62,
+    "usd": 0.248,
+    "name": "qat",
+    "image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+    "cmd": "bash -c '(timeout 120 curl -fsSL https://raw.githubusercontent.com/leejianrong/real-time-object-detection/e6c92fe3cbe58bd46f59950e17c6d02178d5ac15/scripts/job_qat.sh -o /tmp/job.sh && RTOD_SHA=\"e6c92fe3cbe58bd46f59950e17c6d02178d5ac15\" QAT_STEPS=\"6000\" QAT_LR=\"1e-05\" QAT_CLIP=\"100.0\" QAT_CONFIGS=\"p30_std:--prune-macs 0.3 --plain --lr 2.5e-3 --warmup 200 --steps 6000 --ema,p50_std:--prune-macs 0.5 --plain --lr 2.5e-3 --warmup 200 --steps 6000 --ema\" bash /tmp/job.sh) || echo \"RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?\"'",
+    "offers": [
+      [
+        "COMMUNITY",
+        "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"
+      ],
+      [
+        "SECURE",
+        "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"
+      ]
+    ],
+    "max_hourly_usd": 0.4,
+    "max_hours": 1.5
+  },
+  {
+    "job": "gpu",
+    "hours": 0.0487,
+    "usd": 0.0195,
+    "name": "gpu",
+    "image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+    "cmd": "bash -c '(timeout 120 curl -fsSL https://raw.githubusercontent.com/leejianrong/real-time-object-detection/7d10dc4dbde2a0aa72a7f72c8f13ad3d7c8ce42c/scripts/job_qat.sh -o /tmp/job.sh && RTOD_SHA=\"7d10dc4dbde2a0aa72a7f72c8f13ad3d7c8ce42c\" RTOD_JOB=\"gpu\" bash /tmp/job.sh) || echo \"RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?\"'",
+    "offers": [
+      [
+        "COMMUNITY",
+        "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"
+      ],
+      [
+        "SECURE",
+        "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"
+      ]
+    ],
+    "max_hourly_usd": 0.4,
+    "max_hours": 1.0
+  },
+  {
+    "job": "gpu",
+    "hours": 0.0135,
+    "usd": 0.0054,
+    "name": "gpu",
+    "image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+    "cmd": "bash -c '(timeout 120 curl -fsSL https://raw.githubusercontent.com/leejianrong/real-time-object-detection/6422848fb907b0ac14887cc2d623ae33d7fd3297/scripts/job_qat.sh -o /tmp/job.sh && RTOD_SHA=\"6422848fb907b0ac14887cc2d623ae33d7fd3297\" RTOD_JOB=\"gpu\" bash /tmp/job.sh) || echo \"RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?\"'",
+    "offers": [
+      [
+        "COMMUNITY",
+        "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"
+      ],
+      [
+        "SECURE",
+        "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"
+      ]
+    ],
+    "max_hourly_usd": 0.4,
+    "max_hours": 1.0
+  },
+  {
+    "job": "gpu",
+    "hours": 0.0014,
+    "usd": 0.0006,
+    "name": "gpu",
+    "image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+    "cmd": "bash -c '(timeout 120 curl -fsSL https://raw.githubusercontent.com/leejianrong/real-time-object-detection/cfe9f12d5e9dd9d1a2cbff89a911d43b8593fb08/scripts/job_qat.sh -o /tmp/job.sh && RTOD_SHA=\"cfe9f12d5e9dd9d1a2cbff89a911d43b8593fb08\" RTOD_JOB=\"gpu\" bash /tmp/job.sh) || echo \"RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?\"'",
+    "offers": [
+      [
+        "SECURE",
+        "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"
+      ],
+      [
+        "COMMUNITY",
+        "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"
+      ]
+    ],
+    "max_hourly_usd": 0.4,
+    "max_hours": 1.0
+  },
+  {
+    "job": "gpu",
+    "hours": 0.0077,
+    "usd": 0.0031,
+    "name": "gpu",
+    "image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+    "cmd": "bash -c '(timeout 120 curl -fsSL https://raw.githubusercontent.com/leejianrong/real-time-object-detection/f8125f1e7bef7983a5ccdfda7062df7b338f89d6/scripts/job_qat.sh -o /tmp/job.sh && RTOD_SHA=\"f8125f1e7bef7983a5ccdfda7062df7b338f89d6\" RTOD_JOB=\"gpu\" bash /tmp/job.sh) || echo \"RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?\"'",
+    "offers": [
+      [
+        "SECURE",
+        "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"
+      ],
+      [
+        "COMMUNITY",
+        "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"
+      ]
+    ],
+    "max_hourly_usd": 0.4,
+    "max_hours": 1.0,
+    "min_ram_gb": 8
+  },
+  {
+    "job": "gpu",
+    "hours": 0.066,
+    "usd": 0.0264,
+    "name": "gpu",
+    "image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+    "cmd": "bash -c '(timeout 120 curl -fsSL https://raw.githubusercontent.com/leejianrong/real-time-object-detection/fd49a0979a764d7bfa24d8e69dc2a5649d6ee548/scripts/job_qat.sh -o /tmp/job.sh && RTOD_SHA=\"fd49a0979a764d7bfa24d8e69dc2a5649d6ee548\" RTOD_JOB=\"gpu\" bash /tmp/job.sh) || echo \"RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?\"'",
+    "offers": [
+      [
+        "SECURE",
+        "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"
+      ],
+      [
+        "COMMUNITY",
+        "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"
+      ]
+    ],
+    "max_hourly_usd": 0.4,
+    "max_hours": 1.0,
+    "min_ram_gb": 8
+  },
+  {
+    "job": "gpu",
+    "hours": 0.3118,
+    "usd": 0.1247,
+    "name": "gpu",
+    "image": "runpod/pytorch:2.4.0-py3.11-cuda12.4.1-devel-ubuntu22.04",
+    "cmd": "bash -c '(timeout 120 curl -fsSL https://raw.githubusercontent.com/leejianrong/real-time-object-detection/07381b8de13704e277b1bd41b08a8138a72fbb04/scripts/job_qat.sh -o /tmp/job.sh && RTOD_SHA=\"07381b8de13704e277b1bd41b08a8138a72fbb04\" RTOD_JOB=\"gpu\" bash /tmp/job.sh) || echo \"RTOD_FATAL phase=bootstrap job script fetch/run failed exit=$?\"'",
+    "offers": [
+      [
+        "SECURE",
+        "NVIDIA RTX 4000 Ada Generation,NVIDIA RTX 2000 Ada Generation"
+      ],
+      [
+        "COMMUNITY",
+        "NVIDIA GeForce RTX 4090,NVIDIA RTX 4000 Ada Generation"
+      ]
+    ],
+    "max_hourly_usd": 0.4,
+    "max_hours": 1.0,
+    "min_ram_gb": 8
   }
 ]

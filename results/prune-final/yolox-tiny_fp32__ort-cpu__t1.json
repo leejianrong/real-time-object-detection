@@ -1,0 +1,32 @@
+{
+  "variant": "yolox-tiny/fp32",
+  "runtime": "ort-cpu",
+  "hardware": {
+    "cpu": "13th Gen Intel(R) Core(TM) i7-13620H",
+    "logical_cpus": 16,
+    "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+    "python": "3.12.12",
+    "onnxruntime": "1.31.1"
+  },
+  "threads": 1,
+  "input_size": 416,
+  "warmup": 20,
+  "iters": 200,
+  "quick": false,
+  "model_ms_p50": 83.52540150008281,
+  "model_ms_p95": 115.8179811478476,
+  "e2e_ms_p50": 84.9305825013289,
+  "e2e_ms_p95": 117.38723804883193,
+  "fps": 11.774321693653203,
+  "size_bytes": 20295041,
+  "git_sha": "fe0c2de",
+  "map50_95": null,
+  "map50": null,
+  "map50_95_se": null,
+  "eval_subset": null,
+  "per_class_ap": null,
+  "peak_rss_mb": 102.89453125,
+  "cpu_ms_per_inference": 87.05649123999999,
+  "cores_used": 1.000724049352923,
+  "schema_version": 1
+}

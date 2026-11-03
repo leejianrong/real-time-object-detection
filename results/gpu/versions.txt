@@ -1,0 +1,7 @@
+numpy                             2.4.6
+onnx                              1.23.2
+onnxconverter-common              1.16.0
+onnxruntime-gpu                   1.22.0
+tensorrt_cu12                     11.4.0.106
+tensorrt_cu12_bindings            11.4.0.106
+tensorrt_cu12_libs                11.4.0.106
