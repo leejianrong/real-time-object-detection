@@ -10,7 +10,7 @@ a catalog entry, a thumbnail, the Colab notebook, a test, the build-script lines
 A 15-second road-traffic clip loops with live boxes, an fps readout and a per-frame latency strip. The page opens
 on a **replay** (recorded detections from the same model on the same frames). **Run live on this server** runs the
 INT8 YOLOX-Tiny here for up to 30 s, one visitor at a time; a run that turns out too slow drops back to the replay.
-A badge says which one you are looking at and why. No uploads, no camera, no OpenCV (frames are bundled JPEGs; Pillow
+A segmented control (Recorded | Live) picks which one you see, and a status line says which it is and why. No uploads, no camera, no OpenCV (frames are bundled JPEGs; Pillow
 and numpy do the rest).
 
 ## Why replay is the default (measured, not assumed)
@@ -52,4 +52,4 @@ and has a recorded fallback."
   with `scripts/capture_thumbnails.py` once the demo is in the gallery.
 - The Colab and Space copies fetch the clip and recording from `raw.githubusercontent.com/leejianrong/indah/main/...`,
   which only resolves after this merges.
-- The assets add about 2.6 MB to the repo.
+- The assets add about 4 MB to the repo.

@@ -23,7 +23,7 @@ import cv2
 
 HERE = Path(__file__).parent
 OUT = HERE / "examples/yolox_traffic"
-FPS, SECONDS, SIZE, QUALITY = 12, 15, (480, 270), 55
+FPS, SECONDS, SIZE, QUALITY = 12, 15, (640, 360), 55
 
 
 def load_example():

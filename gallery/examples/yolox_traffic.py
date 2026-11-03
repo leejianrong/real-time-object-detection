@@ -39,13 +39,12 @@ from typing import Any
 
 import indah
 from indah import (
-    Badge,
     BarStrip,
-    Button,
     Card,
     Column,
+    Grid,
     ImageOverlay,
-    Row,
+    Segmented,
     Session,
     Signal,
     Stat,
@@ -58,6 +57,7 @@ ASSETS = Path(__file__).with_name("yolox_traffic")
 # A Colab or Space copies only this file: missing assets are fetched.
 ASSET_URL = "https://raw.githubusercontent.com/leejianrong/indah/main/examples/yolox_traffic"
 FPS_FLOOR = 8.0  # live below this for a few seconds falls back to replay
+RECORDED, LIVE = "Recorded", "Live"
 LIVE_MAX_S = 30.0  # one live run lasts at most this long (the shared CPU's burst credit is finite)
 BUDGET_MS = 1000 / 30  # a frame takes under this to keep up with 30 fps video
 MODEL_REPO, MODEL_FILE = "jianlee/yolox-tiny-quantized", "yolox_tiny_ptq_int8_calib32.onnx"
@@ -267,7 +267,9 @@ class Player:
             Signal("0"),
             Signal("0"),
         )
-        self.badge = Signal("starting")
+        self.badge = Signal("starting")  # the status line under the controls
+        self.mode = Signal(RECORDED)  # the Segmented control; "Live" asks for the model
+        self.asking = False
         self.latencies: deque[float] = deque(maxlen=60)
         self.finished: list[float] = []
         self.t0 = time.monotonic()
@@ -281,6 +283,7 @@ class Player:
 
     def set_mode(self, live: bool, reason: str | None = None) -> None:
         self.live = live
+        self.mode.set(LIVE if live else RECORDED)
         hw = self.clip.meta["recorded_on"]
         if live:
             self.badge.set(f"Live: running the model on this server (up to {LIVE_MAX_S:.0f} s)")
@@ -303,9 +306,23 @@ class Player:
         else:
             self.set_mode(False, f"can't run live: {reason or 'server busy'}")
 
+    async def sync_mode(self) -> None:
+        """Follow the Segmented control: Live asks for the model, Recorded gives it back."""
+        want = self.mode.value == LIVE
+        if want and not self.live and not self.asking:
+            self.asking = True
+            try:
+                await self.go_live()
+            finally:
+                self.asking = False
+        elif not want and self.live:
+            SLOT.release(self)
+            self.set_mode(False)
+
     async def display(self) -> None:
         last = -1
         while True:
+            await self.sync_mode()
             i = self.index()
             if i != last:
                 self.frame.set(self.clip.uri(i))
@@ -359,25 +376,28 @@ class Player:
 
 
 def page(p: Player) -> Column:
-    return Column(
+    video = Card(
         [
-            Text("YOLOX-Tiny, INT8, on a traffic clip it was never trained on", variant="title"),
-            Row(
-                [Badge(p.badge, tone="info"), Button("Run live on this server", on_click=p.go_live)]
+            ImageOverlay(p.frame, boxes=p.boxes, label_mode="always"),
+            Text(p.badge, variant="caption"),
+        ]
+    )
+    stats = Column(
+        [
+            Grid(
+                [
+                    Stat(p.fps, label="inference fps"),
+                    Stat(p.p50, label="p50 ms"),
+                    Stat(p.p95, label="p95 ms"),
+                    Stat(p.objects, label="objects"),
+                ],
+                columns=2,
             ),
             Card(
                 [
-                    ImageOverlay(p.frame, boxes=p.boxes, label_mode="always"),
-                    Row(
-                        [
-                            Stat(p.fps, label="inference fps"),
-                            Stat(p.p50, label="p50 ms"),
-                            Stat(p.p95, label="p95 ms"),
-                            Stat(p.objects, label="objects"),
-                        ]
-                    ),  # fmt: skip
                     Text(
-                        "Latency of each frame, last 60 (dark = over the 33 ms of a 30 fps frame)"
+                        "Latency per frame, last 60 (dark: over 33 ms, a 30 fps frame)",
+                        variant="caption",
                     ),
                     BarStrip(
                         p.bars,
@@ -385,16 +405,28 @@ def page(p: Player) -> Column:
                         tones=["ok", "warn"],
                         names=["within 33 ms", "over budget"],
                         label="Per-frame latency",
-                    ),  # fmt: skip
-                ]
+                    ),
+                ],
+                variant="flat",
             ),
+        ]
+    )  # fmt: skip
+    return Column(
+        [
+            Text("YOLOX-Tiny, INT8, on a traffic clip it was never trained on", variant="title"),
+            Segmented(p.mode, options=[RECORDED, LIVE], tones={LIVE: "ok"}, label="Boxes from"),
+            Grid([video, stats], columns="minmax(0, 700px) 1fr"),
             Text(
-                "Boxes update when the model finishes a frame, so a slow server trails the video. "
-                "Live runs last up to 30 s, one visitor at a time; replay is the same model."
+                "Recorded: boxes and timings computed earlier by this same model on these same "
+                "frames. "
+                "Live: this server runs the model now, up to 30 s, one visitor at a time. "
+                "Boxes update when a frame finishes, so a slow server trails the video.",
+                variant="caption",
             ),
             Text(
                 "Clip: 'Road traffic in Ljubljana' by Sounds of Changes, CC BY 3.0 "
-                "(first 15 s, downscaled). Model: YOLOX-Tiny (Megvii, Apache-2.0), INT8."
+                "(first 15 s, downscaled). Model: YOLOX-Tiny (Megvii, Apache-2.0), INT8.",
+                variant="caption",
             ),
         ]
     )
