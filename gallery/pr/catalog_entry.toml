@@ -1,0 +1,13 @@
+
+[[app]]
+slug = "yolox-traffic"
+title = "Real-time detection on a traffic clip"
+emoji = "🚦"
+blurb = "A quantized YOLOX-Tiny on a road clip it never saw: replay, or run it live on this server."
+author = "Jian Lee"
+kind = "hosted"
+module = "yolox_traffic"
+thumbnail = "yolox-traffic.png"
+source_url = "https://github.com/leejianrong/indah/blob/main/examples/yolox_traffic.py"
+tags = ["images", "video", "model"]
+added = "2026-11-03"
