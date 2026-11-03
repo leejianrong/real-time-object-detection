@@ -389,6 +389,10 @@ def page(p: Player) -> Column:
                 "Boxes update when the model finishes a frame, so a slow server trails the video. "
                 "Live runs last up to 30 s, one visitor at a time; replay is the same model."
             ),
+            Text(
+                "Clip: 'Road traffic in Ljubljana' by Sounds of Changes, CC BY 3.0 "
+                "(first 15 s, downscaled). Model: YOLOX-Tiny (Megvii, Apache-2.0), INT8."
+            ),
         ]
     )
 
