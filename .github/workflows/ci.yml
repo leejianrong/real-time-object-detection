@@ -44,3 +44,15 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: make install
       - run: make audit
+  notebook:
+    # Executes the showcase notebook end to end (downloads the published models). Slow, so it runs
+    # only when the notebook or what it imports changes, and on main.
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || contains(join(github.event.pull_request.labels.*.name, ','), 'notebook')
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with: { enable-cache: true }
+      - run: make install
+      - run: uv run pytest tests/notebook -m notebook -q
